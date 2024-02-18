@@ -5,3 +5,4 @@
 1. Jan Lendl Uy
 2. Christian Balanquit
 3. James Benedict Janda
+4. Al John Lexter Lozano
