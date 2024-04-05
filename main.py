@@ -8,7 +8,7 @@ def main():
        
     # Since train.json is too large, it was zipped
     # To read the file, unzip then pass to the json parser   
-    unzip_file(ZIPPED_TRAIN_SET_PATH)
+    unzip_file(ZIPPED_TRAIN_SET_PATH, "datasets/")
         
     document_numbers_train, texts_train, tokens_train, trailing_whitespaces_train, labels_train = read_pii_json(TRAIN_SET_PATH, is_train=True)
     document_numbers_test, texts_test, tokens_test, trailing_whitespaces_test = read_pii_json(TEST_SET_PATH)
