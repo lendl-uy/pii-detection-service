@@ -7,7 +7,6 @@ def unzip_file(source_path, destination_path="."):
             # Extract all the contents into the directory specified
             zip_ref.extractall(destination_path)
     except Exception as e:
-        # Corrected exception handling syntax
         raise RuntimeError(f"{e} occurred!") from e
     
 
@@ -25,17 +24,14 @@ def read_pii_json(file_path, is_train=False):
         raise json.JSONDecodeError("JSONDecodeError: Error decoding JSON from the file.")
     except Exception as e:
         raise RuntimeError(f"An unexpected error occurred: {e}")
-        
+     
+    # Extract the values of the keys and store in dedicated lists   
     document_numbers = [data[i]["document"] for i in range(len(data))]
     texts = [data[i]["full_text"] for i in range(len(data))]
     tokens = [data[i]["tokens"] for i in range(len(data))]
     trailing_whitespaces = [data[i]["trailing_whitespace"] for i in range(len(data))]
-    
-    # print(document_numbers)
-    # print(texts)
-    # print(tokens)
-    # print(trailing_whitespaces)
-        
+      
+    # Training set has an extra key "label"  
     if is_train:
         labels = [data[i]["labels"] for i in range(len(data))]
         return document_numbers, texts, tokens, trailing_whitespaces, labels
