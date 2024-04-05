@@ -1,4 +1,5 @@
 import json
+import zipfile
 
 from constants import * 
 
@@ -32,8 +33,12 @@ def read_pii_json(file_path):
 
 
 def main():
+        
+    with zipfile.ZipFile(TRAIN_SET_PATH, 'r') as zip_ref:
+        # Extract all the contents into the directory specified
+        zip_ref.extractall("datasets")
     
-    document_numbers_train, texts_train, tokens_train, trailing_whitespaces_train = read_pii_json(TRAIN_SET_PATH)
+    document_numbers_train, texts_train, tokens_train, trailing_whitespaces_train = read_pii_json(TRAIN_SET_PATH[:-4])
     document_numbers_test, texts_test, tokens_test, trailing_whitespaces_test = read_pii_json(TEST_SET_PATH)
         
     
