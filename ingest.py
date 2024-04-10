@@ -1,37 +1,59 @@
 import json
 from pymongo import MongoClient
 
+from constants import *
+
 # Simulate receiving JSON data from a web service
 json_data = '''
 {
   "sample_pii_data": [
     {
-      "document": "100", 
+      "document": null, 
       "full_text": "This is a sample essay", 
-      "tokens": ["This", "is", "a", "sample", "essay"], 
-      "trailing_whitespace": [false, false, false, false, false], 
+      "tokens": null, 
+      "trailing_whitespace": null, 
       "labels": null
     }
   ]
 }
 '''
 
-# Convert JSON string to a Python dictionary
-data = json.loads(json_data)
+# {
+#   "sample_pii_data": [
+#     {
+#       "document": "100", 
+#       "full_text": "This is a sample essay", 
+#       "tokens": ["This", "is", "a", "sample", "essay"], 
+#       "trailing_whitespace": [false, false, false, false, false], 
+#       "labels": null
+#     }
+#   ]
+# }
 
-# Connect to the local MongoDB database
-client = MongoClient("mongodb://localhost:27017")
+def ingest(json_data):
 
-# Select the database and collection
-db = client["ai231"]  # Use a database called 'ai231'
-collection = db["pii_data_staging"]   # Use a collection called 'pii_data_staging'
+    # Convert JSON string to a Python dictionary
+    data = json.loads(json_data)
 
-# Insert the data into the collection
-result = collection.insert_many(data["sample_pii_data"])
+    # Connect to the local MongoDB database
+    # client = MongoClient(MONGODB_CONNECTION_STRING)
 
-# Print the IDs of the inserted documents
-print("IDs of the inserted documents:")
-print(result.inserted_ids)
+    # Select the database and collection
+    # db = client[DATABASE_NAME]  # Use a database called 'ai231'
+    # collection = db[COLLECTION_NAME_STAGING]   # Use a collection called 'pii_data_staging'
 
-# Close the connection to MongoDB
-client.close()
+    # Insert the data into the collection
+    # result = collection.insert_many(data["sample_pii_data"])
+
+    # Print the IDs of the inserted documents
+    # print("IDs of the inserted documents:")
+    # print(result.inserted_ids)
+
+    # Close the connection to MongoDB
+    # client.close()
+
+def main():
+    ingest(json_data)
+
+if __name__ == "__main__":
+    main()
