@@ -2,7 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import Counter
 
-from constants import *
+from training_constants import *
 from read_dataset import unzip_file, read_pii_json
 
 def visualize_labels(labels, frequencies):
@@ -39,7 +39,7 @@ def visualize_labels(labels, frequencies):
 def main():
     # Since train.json is too large, it was zipped
     # To read the file, unzip then pass to the json parser   
-    unzip_file(ZIPPED_TRAIN_SET_PATH, "datasets/")
+    unzip_file(ZIPPED_TRAIN_SET_PATH, "../datasets/")
         
     _ , texts_train, tokens_train, _ , labels_train = read_pii_json(TRAIN_SET_PATH, is_train=True)
     _ , texts_test, tokens_test, _ = read_pii_json(TEST_SET_PATH)
