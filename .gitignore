@@ -1,2 +1,10 @@
-datasets/train.json
+# Ignore boilerplate directories
 __pycache__
+.vscode
+data_ingestion/db_sandbox.sql
+
+# Ignore train.json to circumvent Git LFS issues
+datasets/train.json
+
+# Ignore new kernel directory for now
+pii_detection_staging
