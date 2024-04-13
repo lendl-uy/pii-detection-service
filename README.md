@@ -28,7 +28,7 @@ Key contributors to this repository are the following:
 * training
 * eda
 
-## Branching Strategy
+## B. Branching Strategy
 * eda
 * model_training
 * apps
