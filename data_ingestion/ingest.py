@@ -1,6 +1,16 @@
 import json
 import re
+import boto3
+from botocore.exceptions import NoCredentialsError
 from db_scripts import connect_to_database, insert_into_database
+
+def download_file_from_s3(bucket, object_name, file_name):
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.download_file(bucket, object_name, file_name)
+        print("File downloaded successfully")
+    except NoCredentialsError:
+        print("Credentials not available")
 
 def parse_json(json_data):
     # Convert JSON string to a Python dictionary

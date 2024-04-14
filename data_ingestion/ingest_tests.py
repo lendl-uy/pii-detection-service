@@ -1,9 +1,13 @@
-from ingest import ingest
+import os
+from ingest import ingest, download_file_from_s3
 from db_scripts import connect_to_database, clear_database
 from db_constants import *
 
 def ingest_json_data_no_labels():
     # Ingest sample JSON file
+    if not os.path.exists(PATH_TO_SAMPLE_ESSAY):
+        print("Sample JSON file not found! Downloading from AWS S3")
+        download_file_from_s3("ai231-pii-detection", "sample_input.json", PATH_TO_SAMPLE_ESSAY)
     ingest(PATH_TO_SAMPLE_ESSAY)
 
     # Clear database
