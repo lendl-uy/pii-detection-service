@@ -1,4 +1,3 @@
-import json
 import psycopg2
 from psycopg2.extras import execute_values
 from db_constants import *

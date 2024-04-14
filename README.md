@@ -10,22 +10,20 @@ Key contributors to this repository are the following:
 
 # Project Architecture
 
-
-# Project Components
+## Project Components
 * PII Identifier
 * PII Annotator
 * PII Retrainer
 
+## Structure
 
-
-# Structure
-## A. Folder Structure
+### A. Folder Structure
 * apps
     * front
     * backend
     * ml_service
 * infra
-* training
+* model_training
 * eda
 
 ## B. Branching Strategy

@@ -1,9 +1,10 @@
+import os
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import Counter
 
 from training_constants import *
-from read_dataset import unzip_file, read_pii_json
+from read_dataset import download_file_from_s3, read_pii_json
 
 def visualize_labels(labels, frequencies):
     
@@ -37,12 +38,16 @@ def visualize_labels(labels, frequencies):
     plt.show()
 
 def main():
-    # Since train.json is too large, it was zipped
-    # To read the file, unzip then pass to the json parser   
-    unzip_file(ZIPPED_TRAIN_SET_PATH, "../datasets/")
+    
+    if not os.path.exists(f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}"):
+        print("Training set not found! Downloading from AWS S3")
+        download_file_from_s3(S3_BUCKET_NAME, INITIAL_TRAIN_SET, f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}")
+    if not os.path.exists(f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}"):
+        print("Test set not found! Downloading from AWS S3")
+        download_file_from_s3(S3_BUCKET_NAME, INITIAL_TEST_SET, f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}")
         
-    _ , texts_train, tokens_train, _ , labels_train = read_pii_json(TRAIN_SET_PATH, is_train=True)
-    _ , texts_test, tokens_test, _ = read_pii_json(TEST_SET_PATH)
+    _ , texts_train, tokens_train, _ , labels_train = read_pii_json(f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}", is_train=True)
+    _ , texts_test, tokens_test, _ = read_pii_json(f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}")
     
     flat_labels = [label for sublist in labels_train for label in sublist]
     unique_labels = set(flat_labels)
@@ -52,10 +57,6 @@ def main():
 
     # Prepare data for plotting
     labels, frequencies = zip(*label_counts.items())
-    
-    # Don't include "O", not PIIs
-    # pii_labels = labels[1:]
-    # pii_frequencies = frequencies[1:]
 
     visualize_labels(labels, frequencies)
 

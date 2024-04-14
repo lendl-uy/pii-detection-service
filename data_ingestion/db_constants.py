@@ -5,4 +5,4 @@ DB_PASS = "ai231ay202324"
 DB_NAME = "pii_detection_staging"
 
 # Database testing
-PATH_TO_SAMPLE_ESSAY = "../datasets/sample_input.json"
+PATH_TO_SAMPLE_ESSAY = "../model_training/datasets/sample_input.json"

@@ -1,15 +1,7 @@
 import json
-import zipfile
-
-def unzip_file(source_path, destination_path="."):
-    try:
-        with zipfile.ZipFile(source_path, "r") as zip_ref:
-            # Extract all the contents into the directory specified
-            zip_ref.extractall(destination_path)
-    except Exception as e:
-        raise RuntimeError(f"{e} occurred!") from e
+import boto3
+from botocore.exceptions import NoCredentialsError
     
-
 def read_pii_json(file_path, is_train=False):
     # Initialize an empty list to store the data
     data = []
@@ -37,3 +29,23 @@ def read_pii_json(file_path, is_train=False):
         return document_numbers, texts, tokens, trailing_whitespaces, labels
     else:
         return document_numbers, texts, tokens, trailing_whitespaces
+
+def upload_file_to_s3(file_name, bucket, object_name=None):
+    if object_name is None:
+        object_name = file_name
+    s3_client = boto3.client("s3")
+    try:
+        response = s3_client.upload_file(file_name, bucket, object_name)
+        print("File uploaded successfully")
+    except FileNotFoundError:
+        print("The file was not found")
+    except NoCredentialsError:
+        print("Credentials not available")
+
+def download_file_from_s3(bucket, object_name, file_name):
+    s3_client = boto3.client("s3")
+    try:
+        s3_client.download_file(bucket, object_name, file_name)
+        print("File downloaded successfully")
+    except NoCredentialsError:
+        print("Credentials not available")
