@@ -1,6 +1,11 @@
-numpy==1.26.4
-matplotlib==3.8.4
-tensorflow==2.16.1
-seaborn==0.12.2
-tqdm==4.66.2
-psycopg2==2.9.9
+tensorflow==2.15.0
+# keras==2.15.0
+tf-keras
+numpy
+matplotlib
+seaborn
+tqdm
+psycopg2
+ipykernel
+boto3
+transformers
