@@ -4,7 +4,9 @@ __pycache__
 data_ingestion/db_sandbox.sql
 
 # Ignore train.json to circumvent Git LFS issues
-model_training/datasets
+model_training/datasets/train.json
+model_training/datasets/test.json
+model_training/datasets/sample_input.json
 
 # Ignore new kernel directory for now
 staging
