@@ -8,3 +8,8 @@ model_training/datasets
 
 # Ignore new kernel directory for now
 staging
+
+# Ignore environment files
+.env/*
+*.env*
+*.venv*
