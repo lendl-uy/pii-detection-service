@@ -1,5 +1,6 @@
-# AI 231: Machine Learning Operations (MLOps)
-This repository is the codebase of group 1 in the subject AI 231 2nd Sem 2023-2024
+# PII Detection Service
+
+This repository is the codebase for the implementation of a PII detection service for the subject AI 231 2nd Semester 2023-2024.
 
 # Contributors
 Key contributors to this repository are the following:
