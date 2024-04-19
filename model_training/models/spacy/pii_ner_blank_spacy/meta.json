@@ -1,0 +1,44 @@
+{
+  "lang":"en",
+  "name":"pipeline",
+  "version":"0.0.0",
+  "spacy_version":">=3.7.4,<3.8.0",
+  "description":"",
+  "author":"",
+  "email":"",
+  "url":"",
+  "license":"",
+  "spacy_git_version":"bff8725f4",
+  "vectors":{
+    "width":0,
+    "vectors":0,
+    "keys":0,
+    "name":null,
+    "mode":"default"
+  },
+  "labels":{
+    "ner":[
+      "B-EMAIL",
+      "B-ID_NUM",
+      "B-NAME_STUDENT",
+      "B-PHONE_NUM",
+      "B-STREET_ADDRESS",
+      "B-URL_PERSONAL",
+      "B-USERNAME",
+      "I-ID_NUM",
+      "I-NAME_STUDENT",
+      "I-PHONE_NUM",
+      "I-STREET_ADDRESS",
+      "I-URL_PERSONAL"
+    ]
+  },
+  "pipeline":[
+    "ner"
+  ],
+  "components":[
+    "ner"
+  ],
+  "disabled":[
+
+  ]
+}
