@@ -6,10 +6,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 5000:5000
-    volumes:
-      - ./app:/app
-    environment:
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
-      - FLASK_RUN_HOST=
+      - "5000:5000"
+    env_file:
+      - .env
+    command: python3 app.py
+    networks:
+      - datastack-network
+
+networks:
+  datastack-network:
+    external: true
+    name: datastack-network
