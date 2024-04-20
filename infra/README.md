@@ -14,8 +14,8 @@ create schema docs;
 ```
 CREATE TABLE docs.document_table (
     doc_id SERIAL PRIMARY KEY,
-    fulltext TEXT,
-    token TEXT[],
+    fulltext TEXT NOT NULL,
+    token TEXT[] NOT NULL,
     labels TEXT[] DEFAULT NULL,
     validated_labels TEXT[] DEFAULT NULL,
     for_retrain BOOLEAN DEFAULT FALSE
