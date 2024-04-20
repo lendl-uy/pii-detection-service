@@ -13,3 +13,4 @@ staging
 .env/*
 *.env*
 *.venv*
+.venv
