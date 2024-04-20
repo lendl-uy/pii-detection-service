@@ -1,7 +1,7 @@
 from flask import Flask, request
 import psycopg2
 
-from libs.utils import PostgresDB
+from libs.utils import PostgresDB, tokenize
 
 import logging
 
@@ -18,6 +18,9 @@ def save_essay():
     essay = data.get('essay')
 
     if essay:
+        # Tokenize the essay
+        tokens = tokenize(essay)
+
         try:
             # Connect to PostgreSQL
             postgres_client = PostgresDB()
@@ -25,10 +28,7 @@ def save_essay():
 
             logger.info('Saving essay to database')
 
-            # Save the essay to the database
-            postgres_client.save_essay(essay)
-
-            # Close the connection
+            postgres_client.save_essay(essay, tokens)
             postgres_client.close()
 
             return {'message': 'Essay saved successfully'}, 200
@@ -38,4 +38,4 @@ def save_essay():
         return {'message': 'No essay data provided'}, 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
