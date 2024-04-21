@@ -41,10 +41,10 @@ def main():
     
     if not os.path.exists(f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}"):
         print("Training set not found! Downloading from AWS S3")
-        download_file_from_s3(S3_BUCKET_NAME, INITIAL_TRAIN_SET, f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}")
+        download_file_from_s3(S3_BUCKET_NAME, f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}", f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}")
     if not os.path.exists(f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}"):
         print("Test set not found! Downloading from AWS S3")
-        download_file_from_s3(S3_BUCKET_NAME, INITIAL_TEST_SET, f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}")
+        download_file_from_s3(S3_BUCKET_NAME, f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}", f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}")
         
     _ , texts_train, tokens_train, _ , labels_train = read_pii_json(f"{DATASETS_DIRECTORY}/{INITIAL_TRAIN_SET}", is_train=True)
     _ , texts_test, tokens_test, _ = read_pii_json(f"{DATASETS_DIRECTORY}/{INITIAL_TEST_SET}")
