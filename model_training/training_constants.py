@@ -7,6 +7,5 @@ INITIAL_TRAIN_SET = "train.json"
 INITIAL_TEST_SET = "test.json"
 
 # Model parameters
-BATCH_SIZE = 64
-EPOCHS = 3
-LEARNING_RATE = 1e-2
+EPOCHS = 5
+DROPOUT_RATE = 0.3
