@@ -1,6 +1,8 @@
 import os
 import zipfile
 import boto3
+import spacy
+import shutil
 from botocore.exceptions import NoCredentialsError
 
 from predictor_constants import *
@@ -24,19 +26,37 @@ def extract_zip(zip_path, extract_to=None):
         zip_ref.extractall(extract_to)
         print(f"All files have been extracted to: {extract_to}")
 
-def main():
-
-    model_name = BLANK_NER
-
+def load_model(model_name):
     # Pull the PII predictor model from AWS S3 and remove unnecessary files
-    if not os.path.exists(f"{MODELS_DIRECTORY}/{model_name}"):
+    if not os.path.exists(model_name):
         print("Model not found! Downloading from AWS S3")
-        download_file_from_s3(S3_BUCKET_NAME, f"{MODELS_DIRECTORY}/{model_name}", model_name)
+        download_file_from_s3(S3_BUCKET_NAME, f"{MODELS_DIRECTORY}/{model_name}.zip", f"{model_name}.zip")
 
         print("Preparing the downloaded model")
-        extract_zip(model_name, os.getcwd())
-        os.remove(model_name)
-    
+        extract_zip(f"{model_name}.zip", os.getcwd())
+        os.remove(f"{model_name}.zip")
 
-if __name__ == "__main__":
-    main()
+def delete_model(model_path):
+    if os.path.exists(model_path):
+        try:
+            shutil.rmtree(model_path)
+            print(f"The model {model_path} has been successfully deleted.")
+        except Exception as e:
+            print(f"Failed to delete the model: {e}")
+    else:
+        print(f"The specified model {model_path} does not exist.")
+
+def predict(document, model_name):
+    # Load the specified trained model
+    nlp = spacy.load(model_name)
+    doc = nlp(document)
+
+    predictions = []
+    for token in doc:
+        ent_type = token.ent_type_
+        if ent_type.startswith(('"B-"', "I-")):
+            predictions.append(ent_type)
+        else:
+            predictions.append("O")
+
+    return predictions
