@@ -7,56 +7,69 @@ from botocore.exceptions import NoCredentialsError
 
 from predictor_constants import *
 
-def download_file_from_s3(bucket, object_name, file_name):
-    s3_client = boto3.client("s3")
-    try:
-        s3_client.download_file(bucket, object_name, file_name)
-        print("File downloaded successfully")
-    except NoCredentialsError:
-        print("Credentials not available")
+class Predictor:
 
-def extract_zip(zip_path, extract_to=None):
-    # If no target directory provided, extract in the current directory
-    if extract_to is None:
-        extract_to = os.path.dirname(zip_path)
-    
-    # Open the zip file
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        # Extract all the contents into the directory
-        zip_ref.extractall(extract_to)
-        print(f"All files have been extracted to: {extract_to}")
+    def __init__(self):
 
-def load_model(model_name):
-    # Pull the PII predictor model from AWS S3 and remove unnecessary files
-    if not os.path.exists(model_name):
-        print("Model not found! Downloading from AWS S3")
-        download_file_from_s3(S3_BUCKET_NAME, f"{MODELS_DIRECTORY}/{model_name}.zip", f"{model_name}.zip")
+        pass
 
-        print("Preparing the downloaded model")
-        extract_zip(f"{model_name}.zip", os.getcwd())
-        os.remove(f"{model_name}.zip")
-
-def delete_model(model_path):
-    if os.path.exists(model_path):
+    def download_file_from_s3(bucket, object_name, file_name):
+        # Initialize an S3 client
+        s3_client = boto3.client("s3")
         try:
-            shutil.rmtree(model_path)
-            print(f"The model {model_path} has been successfully deleted.")
-        except Exception as e:
-            print(f"Failed to delete the model: {e}")
-    else:
-        print(f"The specified model {model_path} does not exist.")
+            # Download the file/object from the specified bucket name to the destination path
+            s3_client.download_file(bucket, object_name, file_name)
+            print("File downloaded successfully")
+        except NoCredentialsError:
+            print("Credentials not available")
 
-def predict(document, model_name):
-    # Load the specified trained model
-    nlp = spacy.load(model_name)
-    doc = nlp(document)
+    def extract_zip(self, zip_path, extract_to=None):
+        # If no target directory provided, extract in the current directory
+        if extract_to is None:
+            extract_to = os.path.dirname(zip_path)
+        
+        # Open the zip file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            # Extract all the contents into the directory
+            zip_ref.extractall(extract_to)
+            print(f"All files have been extracted to: {extract_to}")
 
-    predictions = []
-    for token in doc:
-        ent_type = token.ent_type_
-        if ent_type.startswith(('"B-"', "I-")):
-            predictions.append(ent_type)
+    def get_model(self, model_name):
+        # Pull the PII predictor model from AWS S3 and remove unnecessary files
+        if not os.path.exists(model_name):
+            print("Model not found! Downloading from AWS S3")
+            self.download_file_from_s3(S3_BUCKET_NAME, f"{MODELS_DIRECTORY}/{model_name}.zip", f"{model_name}.zip")
+
+            print("Preparing the downloaded model")
+            self.extract_zip(f"{model_name}.zip", os.getcwd())
+            os.remove(f"{model_name}.zip")
+
+    def delete_model(model_path):
+        # Check if the model already exists
+        if os.path.exists(model_path):
+            try:
+                # Delete the model directory, including the contents of the directory
+                shutil.rmtree(model_path)
+                print(f"The model {model_path} has been successfully deleted.")
+            except Exception as e:
+                print(f"Failed to delete the model: {e}")
         else:
-            predictions.append("O")
+            print(f"The specified model {model_path} does not exist.")
 
-    return predictions
+    def predict(document, model_name):
+        # Load the specified trained model
+        nlp = spacy.load(model_name)
+
+        # Predict the PII entities from the input document
+        doc = nlp(document)
+
+        # Stored predicted labels as a list
+        predictions = []
+        for token in doc:
+            ent_type = token.ent_type_
+            if ent_type.startswith(('"B-"', "I-")):
+                predictions.append(ent_type)
+            else:
+                predictions.append("O")
+
+        return predictions
