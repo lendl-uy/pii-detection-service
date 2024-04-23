@@ -24,11 +24,11 @@ Key contributors to this repository are the following:
         * __init__.py
         * /services
             * __init__.py
-            * /backend
+            * /backend_service
                 * preprocessor.py
                 * response_handler.py
                 * validation_preprocessor.py
-            * /ml
+            * /ml_service
                 * predictor.py
                 * model_retrainer.py
                 * model_storage_manager.py
