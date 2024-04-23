@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2.extras import execute_values
-from db_constants import *
+from app.infra.db_constants import *
 
 def connect_to_database(db_host=DB_HOST, db_user=DB_USER, db_pass=DB_PASS, db_name=DB_NAME):
     return psycopg2.connect(

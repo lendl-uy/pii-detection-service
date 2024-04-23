@@ -2,7 +2,7 @@ import json
 import re
 import boto3
 from botocore.exceptions import NoCredentialsError
-from db_scripts import connect_to_database, insert_into_database
+from app.infra.db_scripts import connect_to_database, insert_into_database
 
 def download_file_from_s3(bucket, object_name, file_name):
     s3_client = boto3.client("s3")

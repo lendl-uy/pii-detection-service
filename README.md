@@ -18,14 +18,35 @@ Key contributors to this repository are the following:
 
 ## Structure
 
-### A. Folder Structure
-* apps
-    * front
-    * backend
-    * ml_service
-* infra
-* model_training
-* eda
+### A. Proposed Directory Structure
+* /project_root
+    * /app
+        * __init__.py
+        * /services
+            * __init__.py
+            * /backend
+                * preprocessor.py
+                * response_handler.py
+                * validation_preprocessor.py
+            * /ml
+                * predictor.py
+                * model_retrainer.py
+                * model_storage_manager.py
+        * /infra
+            * __init__.py
+            * database_manager.py
+            * document_table.py
+            * object_store_manager.py
+            * backup_store_manager.py
+        * /static
+            * ...
+        * /templates
+            * ...
+    * /tests
+        * ...
+    * config.py
+    * run.py
+
 
 ## B. Branching Strategy
 * eda
