@@ -1,12 +1,12 @@
 import psycopg2
-from app.infra.constants import DB_HOST, DB_USER, DB_PASS, DB_NAME
+from constants import DB_HOST, DB_USER, DB_PASS, DB_NAME
 
 class DatabaseManager:
 
-    def __init__(self):
-        pass
+    def __init__(self, db_host=DB_HOST, db_user=DB_USER, db_pass=DB_PASS, db_name=DB_NAME):
+        self.database_connection = self.connect_to_database(db_host, db_user, db_pass, db_name)
 
-    def connect_to_database(db_host=DB_HOST, db_user=DB_USER, db_pass=DB_PASS, db_name=DB_NAME):
+    def connect_to_database(self, db_host=DB_HOST, db_user=DB_USER, db_pass=DB_PASS, db_name=DB_NAME):
         return psycopg2.connect(
             dbname=db_name,
             user=db_user,
@@ -14,8 +14,8 @@ class DatabaseManager:
             host=db_host
         )
 
-    def insert_into_database(full_text, tokens, connection, labels=None, validated_labels=None, for_retrain=0):
-        cursor = connection.cursor()
+    def insert_into_database(self, full_text, tokens, labels=None, validated_labels=None, for_retrain=0):
+        cursor = self.database_connection.cursor()
 
         # Prepare the data as arrays
         full_text_array = [full_text]
@@ -30,13 +30,13 @@ class DatabaseManager:
         """
         cursor.execute(insert_query, (full_text_array, tokens_array, labels_array, validated_labels_array, for_retrain))
         
-        connection.commit()
+        self.database_connection.commit()
         cursor.close()
 
-    def clear_database(connection):
-        cursor = connection.cursor()
+    def clear_database(self):
+        cursor = self.database_connection.cursor()
         delete_query = "DELETE FROM document_table"
         cursor.execute(delete_query)
         
-        connection.commit()
+        self.database_connection.commit()
         cursor.close()
