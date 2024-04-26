@@ -9,3 +9,4 @@ ipykernel
 boto3
 transformers==4.36.2
 scikit-learn
+pytest

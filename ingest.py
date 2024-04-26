@@ -2,7 +2,7 @@ import json
 import re
 import boto3
 from botocore.exceptions import NoCredentialsError
-from app.infra.db_scripts import connect_to_database, insert_into_database
+from app.infra.backend_service.db_scripts import connect_to_database, insert_into_database
 
 def parse_json(json_data):
     # Convert JSON string to a Python dictionary

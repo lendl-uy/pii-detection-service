@@ -1,6 +1,7 @@
 # Ignore boilerplate directories
 __pycache__
 .vscode
+.idea/*
 data_ingestion/db_sandbox.sql
 
 # Ignore train.json to circumvent Git LFS issues
