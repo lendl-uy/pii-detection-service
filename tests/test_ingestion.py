@@ -5,6 +5,9 @@ from app.services.backend_service.preprocessor import Preprocessor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.constants import *
 
+# Database testing
+SAMPLE_ESSAY = "sample_input.json"
+
 @pytest.fixture(scope="function")
 def db_manager():
     db = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
@@ -17,14 +20,14 @@ def test_from_json_to_insertion_in_database(db_manager):
     object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     # Make sure the sample essay file is available
-    if not os.path.exists(PATH_TO_SAMPLE_ESSAY):
-        object_store_manager.download("datasets/sample_input.json", PATH_TO_SAMPLE_ESSAY)
+    if not os.path.exists(SAMPLE_ESSAY):
+        object_store_manager.download(f"datasets/{SAMPLE_ESSAY}", SAMPLE_ESSAY)
 
     # Assume the file download was successful
-    assert os.path.exists(PATH_TO_SAMPLE_ESSAY)
+    assert os.path.exists(SAMPLE_ESSAY)
 
     # Open the JSON file
-    with open(PATH_TO_SAMPLE_ESSAY, "r") as sample_essay:
+    with open(SAMPLE_ESSAY, "r") as sample_essay:
         preprocessor = Preprocessor()
 
         # Obtain then preprocess data

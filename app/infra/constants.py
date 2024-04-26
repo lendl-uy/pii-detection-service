@@ -7,6 +7,3 @@ TABLE_NAME = "document_table"
 
 # S3 details
 S3_BUCKET_NAME = "ai231-pii-detection"
-
-# Database testing
-PATH_TO_SAMPLE_ESSAY = "sample_input.json"
