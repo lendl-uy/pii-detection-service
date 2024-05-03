@@ -39,7 +39,7 @@ def save_essay():
 
             return {'message': 'Essay saved successfully'}, 200
         except psycopg2.Error as e:
-            return {'message': f'Error saving essay to database: {e}', 500
+            return {'message': f'Error saving essay to database: {e}'}, 500
     else:
         return {'message': 'No essay data provided'}, 400
 
