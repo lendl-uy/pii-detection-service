@@ -36,3 +36,6 @@ Key contributors to this repository are the following:
     * apps/ml_service
 * infra
 * cicd
+
+## CICD Components
+* Pylint
