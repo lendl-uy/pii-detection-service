@@ -1,9 +1,12 @@
+"""
+    Backend Service Application for PII Detection
+"""
+import logging
+
 from flask import Flask, request
 import psycopg2
 
 from libs.utils import PostgresDB, tokenize
-
-import logging
 
 app = Flask(__name__)
 
@@ -13,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 @app.route('/save-essay', methods=['POST'])
 def save_essay():
+    """
+        API endpoint for saving the input fulltext to postgresql db
+    """
     # Get the essay data from the request
     data = request.json
     essay = data.get('essay')
@@ -33,7 +39,7 @@ def save_essay():
 
             return {'message': 'Essay saved successfully'}, 200
         except psycopg2.Error as e:
-            return {'message': 'Error saving essay to database: {}'.format(e)}, 500
+            return {'message': f'Error saving essay to database: {e}', 500
     else:
         return {'message': 'No essay data provided'}, 400
 
