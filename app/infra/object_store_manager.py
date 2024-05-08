@@ -36,15 +36,14 @@ class ObjectStoreManager:
 
     def delete_directory(self, prefix):
         try:
-            # List all objects with the specified prefix
-            response = self.s3_client.list_objects_v2(Bucket=self.name, Prefix=prefix)
-            if 'Contents' in response:
-                # Delete each object in the directory
-                for obj in response['Contents']:
-                    self.s3_client.delete_object(Bucket=self.name, Key=obj['Key'])
-                print("Directory deleted successfully")
-            else:
-                print("Directory is empty or does not exist")
+            paginator = self.s3_client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(Bucket=self.name, Prefix=prefix)
+
+            for page in pages:
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        self.s3_client.delete_object(Bucket=self.name, Key=obj['Key'])
+            print("Directory deleted successfully")
         except NoCredentialsError:
             print("Credentials not available")
         except Exception as e:
