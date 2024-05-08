@@ -1,4 +1,6 @@
 import psycopg2
+from psycopg2.extensions import AsIs
+from psycopg2 import sql
 
 class DatabaseManager:
     def __init__(self, db_host, db_user, db_pass, db_name):
@@ -44,6 +46,33 @@ class DatabaseManager:
             # Roll back any changes if an exception occurred
             self.db_connection.rollback()
             print(f"Unable to insert row to the database: {e}")
+            return False
+
+        finally:
+            cursor.close()
+
+        return True
+
+    def update(self, table_name, column, column_value, qualifier, qualifier_value):
+        cursor = self.db_connection.cursor()
+
+        try:
+            # Safely quote the table and column names using psycopg2.sql
+            query = sql.SQL("UPDATE {table} SET {column} = %s WHERE {qualifier} = %s").format(
+                table=sql.Identifier(table_name),
+                column=sql.Identifier(column),
+                qualifier=sql.Identifier(qualifier)
+            )
+
+            cursor.execute(query, (column_value, qualifier_value))
+
+            # Commit changes and close cursor
+            self.db_connection.commit()
+
+        except Exception as e:
+            # Roll back any changes if an exception occurred
+            self.db_connection.rollback()
+            print(f"Unable to update row in the database: {e}")
             return False
 
         finally:

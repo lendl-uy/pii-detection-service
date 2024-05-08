@@ -5,37 +5,40 @@ from app.services.backend_service.preprocessor import Preprocessor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.constants import *
 
-# Database testing
-SAMPLE_ESSAY = "sample_input.json"
+# For database testing
+SAMPLE_ESSAY_NO_LABELS = "sample_input.json"
+SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 
 @pytest.fixture(scope="function")
 def db_manager():
     db = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     db.connect()
     yield db
-    db.clear(TABLE_NAME)
+    # db.clear(TABLE_NAME)
     db.disconnect()
 
-def test_from_json_to_insertion_in_database(db_manager):
+def test_ingest_full_text_and_tokens_to_database(db_manager):
     object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     # Make sure the sample essay file is available
-    if not os.path.exists(SAMPLE_ESSAY):
-        object_store_manager.download(f"datasets/{SAMPLE_ESSAY}", SAMPLE_ESSAY)
+    if not os.path.exists(SAMPLE_ESSAY_NO_LABELS):
+        object_store_manager.download(f"datasets/{SAMPLE_ESSAY_NO_LABELS}", SAMPLE_ESSAY_NO_LABELS)
 
     # Assume the file download was successful
-    assert os.path.exists(SAMPLE_ESSAY)
+    assert os.path.exists(SAMPLE_ESSAY_NO_LABELS)
 
     # Open the JSON file
-    with open(SAMPLE_ESSAY, "r") as sample_essay:
+    with open(SAMPLE_ESSAY_NO_LABELS, "r") as sample_essay:
         preprocessor = Preprocessor()
 
         # Obtain then preprocess data
-        full_text = preprocessor.parse_json(sample_essay)
+        full_text = preprocessor.parse_json("sample_pii_data", sample_essay)
         tokens = preprocessor.tokenize(full_text)
 
         # Insert data into the database
-        insert_success = db_manager.insert(TABLE_NAME, full_text, tokens)
+        insert_success = preprocessor.ingest_to_database(db_manager=db_manager,
+                                                         full_text=full_text,
+                                                         tokens=tokens)
 
         # Check if the insertion was successful
         assert insert_success == True, "Data insertion failed."

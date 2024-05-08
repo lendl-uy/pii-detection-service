@@ -4,11 +4,14 @@ import spacy
 import shutil
 
 from app.services.ml_service.constants import MODELS_DIRECTORY
+from app.services.backend_service.constants import DB_TABLE
 
 class Predictor:
 
     def __init__(self, model_name):
         self.model_name = model_name
+        self.document = None
+        self.predictions = None
 
     def extract_zip(self, zip_path, extract_to=None):
         # If no target directory provided, extract in the current directory
@@ -45,9 +48,12 @@ class Predictor:
 
     def predict(self, document, model_name):
         # Load the specified trained model
+        # if not os.path.exists(model_name):
+        #     self.get_model(model_name, )
         nlp = spacy.load(model_name)
 
         # Predict the PII entities from the input document
+        self.document = document
         doc = nlp(document)
 
         # Stored predicted labels as a list
@@ -59,4 +65,8 @@ class Predictor:
             else:
                 predictions.append("O")
 
-        return predictions
+        self.predictions = predictions
+
+    def save_predictions_to_database(self, db_manager):
+
+        db_manager.update(DB_TABLE, "labels", self.predictions, "full_text", self.document)
