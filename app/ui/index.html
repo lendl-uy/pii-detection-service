@@ -3,7 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <title>Document Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 <style>
+
+    /* Style for the container holding the buttons */
+    .button-container {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 999; /* Ensure the buttons appear on top of other content */
+    }
+
+    /* Style for the buttons */
+    .button {
+        margin-left: 10px;
+        padding: 10px 20px;
+        background-color: #007bff; /* Blue color for buttons, change as needed */
+        color: #fff; /* White text color */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    /* Style for the verify button */
+    .verify-button {
+        background-color: #28a745; /* Green color for verify button */
+    }
+.container {
+  display: flex;
+}
+
+.sidebar {
+    min-width: 200px;
+  max-width: 400px;
+  padding: 20px;
+  background-color: #f0f0f0;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+}
+#document-viewer {
+  border: 1px solid #ccc;
+  min-width: 800px;
+  min-height: 600px;
+  padding: 50px;
+  background-color: #fff;
+
+  margin: 50px; /* Add margin */
+}
+
     .token {
         padding: 2px 4px;
         margin: 2px;
@@ -57,6 +108,10 @@
 
     .dropdown{
     	width: 200px;
+        position: absolute;
+        left: inherit;
+        top: inherit;
+         z-index: 999;
     }
     .dropdown button {
         padding: 5px;
@@ -70,14 +125,153 @@
 </style>
 </head>
 <body>
-<div id="content"></div>
+    <div class="button-container">
+    <!-- Save button -->
+    <button class="button" onclick="saveOrCreate()">Save</button>
+    <!-- Verify button -->
+    <button class="button verify-button" id='verify-btn'>Verify</button>
+    </div>
+
+<div class="container">
+  <div class="sidebar">
+    <h2>Document List</h2>
+    <ul id="document-list">
+    
+    <!-- Document items will be dynamically added here -->
+    </ul>
+
+    <button onclick="newDocument()" id='new-document-btn'> New Document</button>
+    <button>Button 2</button>
+  </div>
+  <div class="main">
+    <div id="document-viewer">
+
+    </div>
+  </div>
+</div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let data = {"document":7,"full_text":"Design Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nChallenge & selection\n\nThe tool I use to help all stakeholders finding their way through the complexity of a project is the  mind map.\n\nWhat exactly is a mind map? According to the definition of Buzan T. and Buzan B. (1999, Dessine-moi  l'intelligence. Paris: Les \u00c9ditions d'Organisation.), the mind map (or heuristic diagram) is a graphic  representation technique that follows the natural functioning of the mind and allows the brain's  potential to be released. Cf Annex1\n\nThis tool has many advantages:\n\n\u2022  It is accessible to all and does not require significant material investment and can be done  quickly\n\n\u2022  It is scalable\n\n\u2022  It allows categorization and linking of information\n\n\u2022  It can be applied to any type of situation: notetaking, problem solving, analysis, creation of  new ideas\n\n\u2022  It is suitable for all people and is easy to learn\n\n\u2022  It is fun and encourages exchanges\n\n\u2022  It makes visible the dimension of projects, opportunities, interconnections\n\n\u2022  It synthesizes\n\n\u2022  It makes the project understandable\n\n\u2022  It allows you to explore ideas\n\nThe creation of a mind map starts with an idea\/problem located at its center. This starting point  generates ideas\/work areas, incremented around this center in a radial structure, which in turn is  completed with as many branches as new ideas.\n\nThis tool enables creativity and logic to be mobilized, it is a map of the thoughts.\n\nCreativity is enhanced because participants feel comfortable with the method.\n\nApplication & Insight\n\nI start the process of the mind map creation with the stakeholders standing around a large board  (white or paper board). In the center of the board, I write and highlight the topic to design.\n\nThrough a series of questions, I guide the stakeholders in modelling the mind map. I adapt the series  of questions according to the topic to be addressed. In the type of questions, we can use: who, what,  when, where, why, how, how much.\n\nThe use of the \u201cwhy\u201d is very interesting to understand the origin. By this way, the interviewed person  frees itself from paradigms and thus dares to propose new ideas \/ ways of functioning. I plan two  hours for a workshop.\n\nDesign Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nAfter modelling the mind map on paper, I propose to the participants a digital visualization of their  work with the addition of color codes, images and interconnections. This second workshop also lasts  two hours and allows the mind map to evolve. Once familiarized with it, the stakeholders discover  the power of the tool. Then, the second workshop brings out even more ideas and constructive  exchanges between the stakeholders. Around this new mind map, they have learned to work  together and want to make visible the untold ideas.\n\nI now present all the projects I manage in this type of format in order to ease rapid understanding for  decision-makers. These presentations are the core of my business models. The decision-makers are  thus able to identify the opportunities of the projects and can take quick decisions to validate them.  They find answers to their questions thank to a schematic representation.\n\nApproach\n\nWhat I find amazing with the facilitation of this type of workshop is the participants commitment for  the project. This tool helps to give meaning. The participants appropriate the story and want to keep  writing it. Then, they easily become actors or sponsors of the project. A trust relationship is built,  thus facilitating the implementation of related actions.\n\nDesign Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nAnnex 1: Mind Map Shared facilities project\n\n","tokens":["Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","Challenge","&","selection","\n\n","The","tool","I","use","to","help","all","stakeholders","finding","their","way","through","the","complexity","of","a","project","is","the"," ","mind","map",".","\n\n","What","exactly","is","a","mind","map","?","According","to","the","definition","of","Buzan","T.","and","Buzan","B.","(","1999",",","Dessine","-","moi"," ","l'intelligence",".","Paris",":","Les","\u00c9ditions","d'Organisation",".",")",",","the","mind","map","(","or","heuristic","diagram",")","is","a","graphic"," ","representation","technique","that","follows","the","natural","functioning","of","the","mind","and","allows","the","brain","'s"," ","potential","to","be","released",".","Cf","Annex1","\n\n","This","tool","has","many","advantages",":","\n\n","\u2022"," ","It","is","accessible","to","all","and","does","not","require","significant","material","investment","and","can","be","done"," ","quickly","\n\n","\u2022"," ","It","is","scalable","\n\n","\u2022"," ","It","allows","categorization","and","linking","of","information","\n\n","\u2022"," ","It","can","be","applied","to","any","type","of","situation",":","notetaking",",","problem","solving",",","analysis",",","creation","of"," ","new","ideas","\n\n","\u2022"," ","It","is","suitable","for","all","people","and","is","easy","to","learn","\n\n","\u2022"," ","It","is","fun","and","encourages","exchanges","\n\n","\u2022"," ","It","makes","visible","the","dimension","of","projects",",","opportunities",",","interconnections","\n\n","\u2022"," ","It","synthesizes","\n\n","\u2022"," ","It","makes","the","project","understandable","\n\n","\u2022"," ","It","allows","you","to","explore","ideas","\n\n","The","creation","of","a","mind","map","starts","with","an","idea","\/","problem","located","at","its","center",".","This","starting","point"," ","generates","ideas","\/","work","areas",",","incremented","around","this","center","in","a","radial","structure",",","which","in","turn","is"," ","completed","with","as","many","branches","as","new","ideas",".","\n\n","This","tool","enables","creativity","and","logic","to","be","mobilized",",","it","is","a","map","of","the","thoughts",".","\n\n","Creativity","is","enhanced","because","participants","feel","comfortable","with","the","method",".","\n\n","Application","&","Insight","\n\n","I","start","the","process","of","the","mind","map","creation","with","the","stakeholders","standing","around","a","large","board"," ","(","white","or","paper","board",")",".","In","the","center","of","the","board",",","I","write","and","highlight","the","topic","to","design",".","\n\n","Through","a","series","of","questions",",","I","guide","the","stakeholders","in","modelling","the","mind","map",".","I","adapt","the","series"," ","of","questions","according","to","the","topic","to","be","addressed",".","In","the","type","of","questions",",","we","can","use",":","who",",","what",","," ","when",",","where",",","why",",","how",",","how","much",".","\n\n","The","use","of","the","\u201c","why","\u201d","is","very","interesting","to","understand","the","origin",".","By","this","way",",","the","interviewed","person"," ","frees","itself","from","paradigms","and","thus","dares","to","propose","new","ideas","\/","ways","of","functioning",".","I","plan","two"," ","hours","for","a","workshop",".","\n\n","Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","After","modelling","the","mind","map","on","paper",",","I","propose","to","the","participants","a","digital","visualization","of","their"," ","work","with","the","addition","of","color","codes",",","images","and","interconnections",".","This","second","workshop","also","lasts"," ","two","hours","and","allows","the","mind","map","to","evolve",".","Once","familiarized","with","it",",","the","stakeholders","discover"," ","the","power","of","the","tool",".","Then",",","the","second","workshop","brings","out","even","more","ideas","and","constructive"," ","exchanges","between","the","stakeholders",".","Around","this","new","mind","map",",","they","have","learned","to","work"," ","together","and","want","to","make","visible","the","untold","ideas",".","\n\n","I","now","present","all","the","projects","I","manage","in","this","type","of","format","in","order","to","ease","rapid","understanding","for"," ","decision","-","makers",".","These","presentations","are","the","core","of","my","business","models",".","The","decision","-","makers","are"," ","thus","able","to","identify","the","opportunities","of","the","projects","and","can","take","quick","decisions","to","validate","them","."," ","They","find","answers","to","their","questions","thank","to","a","schematic","representation",".","\n\n","Approach","\n\n","What","I","find","amazing","with","the","facilitation","of","this","type","of","workshop","is","the","participants","commitment","for"," ","the","project",".","This","tool","helps","to","give","meaning",".","The","participants","appropriate","the","story","and","want","to","keep"," ","writing","it",".","Then",",","they","easily","become","actors","or","sponsors","of","the","project",".","A","trust","relationship","is","built",","," ","thus","facilitating","the","implementation","of","related","actions",".","\n\n","Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","Annex","1",":","Mind","Map","Shared","facilities","project","\n\n"],"trailing_whitespace":[true,true,true,true,false,false,true,false,false,true,false,false,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,false,false,true,false,false,true,false,false,true,false,true,true,true,false,false,false,true,true,true,true,false,true,true,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,false,true,true,false,false,true,true,true,true,false,false,false,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,true,false,true,true,false,false,true,false,true,true,true,true,true,true,false,false,true,false,true,true,true,true,true,true,true,true,false,true,false,true,true,false,true,false,true,true,true,false,true,false,false,true,false,true,true,true,true,true,true,true,true,true,true,false,false,true,false,true,true,true,true,true,false,false,true,false,true,true,true,true,true,true,false,true,false,true,false,false,true,false,true,false,false,true,false,true,true,true,true,false,false,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,false,true,true,true,true,false,true,false,false,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,true,false,false,false,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,true,false,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,false,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,false,true,false,true,false,true,false,false,true,false,true,false,true,false,true,true,false,false,false,true,true,true,true,false,false,true,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true,true,true,false,false,false,true,true,true,true,false,false,true,false,false,true,false,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true,true,true,true,false,true,true,true,true,false,true,false,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,false,false,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,false,true,false,true,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,false,true,true,true,true,true,true,false,false,false,true,true,true,true,false,false,true,false,false,true,false,false,true,false,true,true,true,true,true,false,false],"labels":["O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O"]};
+            let MODE="VIEW"; //VIEW -- view existing tokenized data. CREATE -- for submission of fulltext
+            let newFullText="";
+            let data = {"document":7,"full_text":"Design Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nChallenge & selection\n\nThe tool I use to help all stakeholders finding their way through the complexity of a project is the  mind map.\n\nWhat exactly is a mind map? According to the definition of Buzan T. and Buzan B. (1999, Dessine-moi  l'intelligence. Paris: Les \u00c9ditions d'Organisation.), the mind map (or heuristic diagram) is a graphic  representation technique that follows the natural functioning of the mind and allows the brain's  potential to be released. Cf Annex1\n\nThis tool has many advantages:\n\n\u2022  It is accessible to all and does not require significant material investment and can be done  quickly\n\n\u2022  It is scalable\n\n\u2022  It allows categorization and linking of information\n\n\u2022  It can be applied to any type of situation: notetaking, problem solving, analysis, creation of  new ideas\n\n\u2022  It is suitable for all people and is easy to learn\n\n\u2022  It is fun and encourages exchanges\n\n\u2022  It makes visible the dimension of projects, opportunities, interconnections\n\n\u2022  It synthesizes\n\n\u2022  It makes the project understandable\n\n\u2022  It allows you to explore ideas\n\nThe creation of a mind map starts with an idea\/problem located at its center. This starting point  generates ideas\/work areas, incremented around this center in a radial structure, which in turn is  completed with as many branches as new ideas.\n\nThis tool enables creativity and logic to be mobilized, it is a map of the thoughts.\n\nCreativity is enhanced because participants feel comfortable with the method.\n\nApplication & Insight\n\nI start the process of the mind map creation with the stakeholders standing around a large board  (white or paper board). In the center of the board, I write and highlight the topic to design.\n\nThrough a series of questions, I guide the stakeholders in modelling the mind map. I adapt the series  of questions according to the topic to be addressed. In the type of questions, we can use: who, what,  when, where, why, how, how much.\n\nThe use of the \u201cwhy\u201d is very interesting to understand the origin. By this way, the interviewed person  frees itself from paradigms and thus dares to propose new ideas \/ ways of functioning. I plan two  hours for a workshop.\n\nDesign Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nAfter modelling the mind map on paper, I propose to the participants a digital visualization of their  work with the addition of color codes, images and interconnections. This second workshop also lasts  two hours and allows the mind map to evolve. Once familiarized with it, the stakeholders discover  the power of the tool. Then, the second workshop brings out even more ideas and constructive  exchanges between the stakeholders. Around this new mind map, they have learned to work  together and want to make visible the untold ideas.\n\nI now present all the projects I manage in this type of format in order to ease rapid understanding for  decision-makers. These presentations are the core of my business models. The decision-makers are  thus able to identify the opportunities of the projects and can take quick decisions to validate them.  They find answers to their questions thank to a schematic representation.\n\nApproach\n\nWhat I find amazing with the facilitation of this type of workshop is the participants commitment for  the project. This tool helps to give meaning. The participants appropriate the story and want to keep  writing it. Then, they easily become actors or sponsors of the project. A trust relationship is built,  thus facilitating the implementation of related actions.\n\nDesign Thinking for innovation reflexion-Avril 2021-Nathalie Sylla\n\nAnnex 1: Mind Map Shared facilities project\n\n","tokens":["Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","Challenge","&","selection","\n\n","The","tool","I","use","to","help","all","stakeholders","finding","their","way","through","the","complexity","of","a","project","is","the"," ","mind","map",".","\n\n","What","exactly","is","a","mind","map","?","According","to","the","definition","of","Buzan","T.","and","Buzan","B.","(","1999",",","Dessine","-","moi"," ","l'intelligence",".","Paris",":","Les","\u00c9ditions","d'Organisation",".",")",",","the","mind","map","(","or","heuristic","diagram",")","is","a","graphic"," ","representation","technique","that","follows","the","natural","functioning","of","the","mind","and","allows","the","brain","'s"," ","potential","to","be","released",".","Cf","Annex1","\n\n","This","tool","has","many","advantages",":","\n\n","\u2022"," ","It","is","accessible","to","all","and","does","not","require","significant","material","investment","and","can","be","done"," ","quickly","\n\n","\u2022"," ","It","is","scalable","\n\n","\u2022"," ","It","allows","categorization","and","linking","of","information","\n\n","\u2022"," ","It","can","be","applied","to","any","type","of","situation",":","notetaking",",","problem","solving",",","analysis",",","creation","of"," ","new","ideas","\n\n","\u2022"," ","It","is","suitable","for","all","people","and","is","easy","to","learn","\n\n","\u2022"," ","It","is","fun","and","encourages","exchanges","\n\n","\u2022"," ","It","makes","visible","the","dimension","of","projects",",","opportunities",",","interconnections","\n\n","\u2022"," ","It","synthesizes","\n\n","\u2022"," ","It","makes","the","project","understandable","\n\n","\u2022"," ","It","allows","you","to","explore","ideas","\n\n","The","creation","of","a","mind","map","starts","with","an","idea","\/","problem","located","at","its","center",".","This","starting","point"," ","generates","ideas","\/","work","areas",",","incremented","around","this","center","in","a","radial","structure",",","which","in","turn","is"," ","completed","with","as","many","branches","as","new","ideas",".","\n\n","This","tool","enables","creativity","and","logic","to","be","mobilized",",","it","is","a","map","of","the","thoughts",".","\n\n","Creativity","is","enhanced","because","participants","feel","comfortable","with","the","method",".","\n\n","Application","&","Insight","\n\n","I","start","the","process","of","the","mind","map","creation","with","the","stakeholders","standing","around","a","large","board"," ","(","white","or","paper","board",")",".","In","the","center","of","the","board",",","I","write","and","highlight","the","topic","to","design",".","\n\n","Through","a","series","of","questions",",","I","guide","the","stakeholders","in","modelling","the","mind","map",".","I","adapt","the","series"," ","of","questions","according","to","the","topic","to","be","addressed",".","In","the","type","of","questions",",","we","can","use",":","who",",","what",","," ","when",",","where",",","why",",","how",",","how","much",".","\n\n","The","use","of","the","\u201c","why","\u201d","is","very","interesting","to","understand","the","origin",".","By","this","way",",","the","interviewed","person"," ","frees","itself","from","paradigms","and","thus","dares","to","propose","new","ideas","\/","ways","of","functioning",".","I","plan","two"," ","hours","for","a","workshop",".","\n\n","Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","After","modelling","the","mind","map","on","paper",",","I","propose","to","the","participants","a","digital","visualization","of","their"," ","work","with","the","addition","of","color","codes",",","images","and","interconnections",".","This","second","workshop","also","lasts"," ","two","hours","and","allows","the","mind","map","to","evolve",".","Once","familiarized","with","it",",","the","stakeholders","discover"," ","the","power","of","the","tool",".","Then",",","the","second","workshop","brings","out","even","more","ideas","and","constructive"," ","exchanges","between","the","stakeholders",".","Around","this","new","mind","map",",","they","have","learned","to","work"," ","together","and","want","to","make","visible","the","untold","ideas",".","\n\n","I","now","present","all","the","projects","I","manage","in","this","type","of","format","in","order","to","ease","rapid","understanding","for"," ","decision","-","makers",".","These","presentations","are","the","core","of","my","business","models",".","The","decision","-","makers","are"," ","thus","able","to","identify","the","opportunities","of","the","projects","and","can","take","quick","decisions","to","validate","them","."," ","They","find","answers","to","their","questions","thank","to","a","schematic","representation",".","\n\n","Approach","\n\n","What","I","find","amazing","with","the","facilitation","of","this","type","of","workshop","is","the","participants","commitment","for"," ","the","project",".","This","tool","helps","to","give","meaning",".","The","participants","appropriate","the","story","and","want","to","keep"," ","writing","it",".","Then",",","they","easily","become","actors","or","sponsors","of","the","project",".","A","trust","relationship","is","built",","," ","thus","facilitating","the","implementation","of","related","actions",".","\n\n","Design","Thinking","for","innovation","reflexion","-","Avril","2021","-","Nathalie","Sylla","\n\n","Annex","1",":","Mind","Map","Shared","facilities","project","\n\n"],"trailing_whitespace":[true,true,true,true,false,false,true,false,false,true,false,false,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,false,false,true,false,false,true,false,false,true,false,true,true,true,false,false,false,true,true,true,true,false,true,true,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,false,true,true,false,false,true,true,true,true,false,false,false,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,true,false,true,true,false,false,true,false,true,true,true,true,true,true,false,false,true,false,true,true,true,true,true,true,true,true,false,true,false,true,true,false,true,false,true,true,true,false,true,false,false,true,false,true,true,true,true,true,true,true,true,true,true,false,false,true,false,true,true,true,true,true,false,false,true,false,true,true,true,true,true,true,false,true,false,true,false,false,true,false,true,false,false,true,false,true,true,true,true,false,false,true,false,true,true,true,true,true,false,false,true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,false,true,true,true,true,false,true,false,false,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,true,false,false,false,true,true,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,true,true,true,false,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,false,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,true,true,false,true,false,true,false,true,false,false,true,false,true,false,true,false,true,true,false,false,false,true,true,true,true,false,false,true,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true,true,true,false,false,false,true,true,true,true,false,false,true,false,false,true,false,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,true,true,true,true,false,true,true,true,true,false,true,true,true,true,false,true,false,true,true,true,true,true,true,true,true,true,true,true,false,true,true,true,false,true,true,true,true,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,true,false,false,true,true,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,true,true,true,true,true,true,false,true,true,true,true,true,true,true,true,true,true,false,true,false,true,false,true,true,true,true,true,true,true,true,true,false,true,true,true,true,true,false,true,false,true,true,true,true,true,true,false,false,false,true,true,true,true,false,false,true,false,false,true,false,false,true,false,true,true,true,true,true,false,false],"labels":["O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","O","B-NAME_STUDENT","I-NAME_STUDENT","O","O","O","O","O","O","O","O","O","O"]};
+
+    function changeMODE(newMode) {
+        MODE=newMode;
+        const newDocumentBtn = document.getElementById('new-document-btn');
+        const verifyBtn = document.getElementById('verify-btn');
+        if (MODE === "CREATE") {
+          newDocumentBtn.style.display = 'none'; // Hide button
+          verifyBtn.style.display='none';
+        } else {
+          newDocumentBtn.style.display = 'block'; // Show button
+          verifyBtn.style.display='block';
+        }
+        console.log("changed mode")
+    }
+
+    function newDocument(){
+            changeMODE("CREATE");
+
+            const documentViewer = document.getElementById('document-viewer');
+            newFullText=""
+            documentViewer.innerHTML = ''; // Clear the content
+            documentViewer.contentEditable = true; // Set contenteditable to true
+            documentViewer.focus();
+    }
+    function saveNewDocument(){
+            const documentContent = document.getElementById('document-viewer').innerText;
+            console.log('Submitting document content:', documentContent);
+
+            // Send the document content to the endpoint
+            fetch('/save-essay', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ essay: documentContent })
+            })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Response from server:', data);
+              // Handle response from the server if needed
+            })
+            .catch(error => {
+              console.error('Error sending document content:', error);
+              // Handle error
+            });
+    }
+
+    function saveOrCreate(){
+        if (MODE ==="CREATE"){
+            saveNewDocument();
+        }
+        else if (MODE ==="VIEW"){
+            //TO DO CRY
+
+        }
+    }
+
+    function renderTokens() {
+        container.innerHTML = ''; // Clear existing tokens
+
+        data.tokens.forEach((token, index) => {
+            const span = document.createElement('span');
+            span.classList.add('token');
+
+            let className = cssClassNameFromLabel(index);
+
+            span.classList.add(className);
+
+            span.textContent = token + " "//(data.trailing_whitespace[index] ? ' ' : '')  ;
+            span.onclick = function() { toggleDropdown(this, index); };
+            container.appendChild(span);
+        });
+        }
+
+      // Function to fetch documents and populate the list
+  function fetchDocuments() {
+    fetch('/documents')
+      .then(response => response.json())
+      .then(data => {
+        const documentList = document.getElementById('document-list');
+        documentList.innerHTML = ''; // Clear existing list items
+        data.forEach(doc => {
+          const li = document.createElement('li');
+          li.textContent = `Document ${doc.doc_id}`;
+          li.onclick = () => changeData(doc.doc_id);
+          documentList.appendChild(li);
+        });
+      })
+      .catch(error => console.error('Error fetching documents:', error));
+  }
+    
+
+    function changeData(document_id){
+            changeMODE("VIEW")
+            container.contentEditable = true; 
+            axios.get(`http://127.0.0.1:5000/documents/${document_id}`)
+            .then(response => {
+                data = response.data;
+                renderTokens()
+                // Process the data here, e.g., update the UI
+                console.log("Data:", data);
+            })
+            .catch(error => {
+                console.error("Error fetching data:", error);
+            });
+        }
 
 
-        const container = document.getElementById('content');
+
+
+
+   
+        const container = document.getElementById('document-viewer');
         let activeDropdown = null;
         renderTokens();
 
@@ -127,22 +321,7 @@
         	return className;
         }
 
-        function renderTokens() {
-        container.innerHTML = ''; // Clear existing tokens
-
-        data.tokens.forEach((token, index) => {
-            const span = document.createElement('span');
-            span.classList.add('token');
-
-            let className = cssClassNameFromLabel(index);
-
-            span.classList.add(className);
-
-            span.textContent = token + (data.trailing_whitespace[index] ? ' ' : '')	 ;
-            span.onclick = function() { toggleDropdown(this, index); };
-            container.appendChild(span);
-        });
-    	}
+        
 
         const tokens = data.tokens;
        
@@ -170,12 +349,11 @@
 
        	
             let dropdown = span.querySelector('.dropdown');
-            if ( activeDropdown &&activeDropdown===dropdown){
+            if ( activeDropdown && activeDropdown!==dropdown){
             	activeDropdown.style.display = 'none'; // Hide currently active dropdown
+                console.log("here")
             	activeDropdown.parentNode.classList.remove('active-token');
             	activeDropdown = null;
-            	return;
-
             }
             if (!dropdown) {
                 dropdown = createDropdown(['0',
@@ -192,6 +370,7 @@
                 dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
             }
             activeDropdown = dropdown; 
+            console.log("activeDropdown",activeDropdown)
         }
 
 
@@ -222,9 +401,8 @@
             // Update the label in the data model or send it to the server
         }
 
+fetchDocuments();
 
-
-    });
 </script>
 </body>
 </html>

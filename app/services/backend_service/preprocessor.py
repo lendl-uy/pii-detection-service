@@ -1,7 +1,7 @@
 import json
 import re
-from app.services.backend_service.constants import DB_TABLE
-
+#from app.services.backend_service.constants import DB_TABLE
+DB_TABLE = "document_table"
 class Preprocessor:
 
     def __init__(self):
