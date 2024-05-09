@@ -81,16 +81,13 @@ class DatabaseManager:
         return True
 
     def query(self, query, params=None):
-        cursor = self.db_connection.cursor()
-        try:
-            cursor.execute(query, params)
-            result = cursor.fetchone()
-            return result
-        except psycopg2.Error as e:
-            print(f"Database error: {e}")
-            return None
-        finally:
-            cursor.close()
+        with self.db_connection.cursor() as cursor:
+            try:
+                cursor.execute(query, params)
+                return cursor.fetchall()
+            except psycopg2.Error as e:
+                print(f"Database error: {e}")
+                return None
 
     def clear(self, table_name):
         cursor = self.db_connection.cursor()
