@@ -1,5 +1,5 @@
 import pytest
-from app.infra.database_manager import DatabaseManager
+from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.constants import *
 from app.services.ml_service.constants import BLANK_NER
@@ -15,34 +15,41 @@ sample_labels_2 = ["O", "B-NAME", "I-NAME", "O", "O", "O", "O", "O", "O", "O", "
 
 @pytest.fixture(scope="function")
 def infra_manager():
-    # Create a database manager to connect to the database
-    db = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    db.connect()
+    db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+    s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    # Create an object store manager to pull model from
-    s3 = ObjectStoreManager(S3_BUCKET_NAME)
+    yield db_manager, s3_manager
 
-    yield db, s3
-
-    db.clear(TABLE_NAME)
-    db.disconnect()
+    db_manager.clear_table()
 
 def test_model_retrainer_get_dataset(infra_manager):
+    db_manager, s3_manager = infra_manager
+    session = db_manager.Session()
 
-    db, s3 = infra_manager
+    try:
+        # Insert sample data into the database
+        for i in range(5):
+            entry1 = DocumentEntry(doc_id=None, full_text=sample_text_1, tokens=sample_tokens_1, labels=sample_labels_1, for_retrain=True)
+            entry2 = DocumentEntry(doc_id=None, full_text=sample_text_2, tokens=sample_tokens_2, labels=sample_labels_2, for_retrain=True)
+            session.add_all([entry1, entry2])
 
-    for i in range(5):
-        db.insert(TABLE_NAME, full_text=sample_text_1, tokens=sample_tokens_1, labels=sample_labels_1, for_retrain=True)
-        db.insert(TABLE_NAME, full_text=sample_text_2, tokens=sample_tokens_2, labels=sample_labels_2, for_retrain=True)
+        session.commit()
 
-    model_retrainer = ModelRetrainer(BLANK_NER)
-    texts, tokens, labels = model_retrainer.get_dataset(db)
+        # Retrieve data for training
+        data_entries = session.query(DocumentEntry).filter(DocumentEntry.for_retrain == True).all()
+        texts = [entry.full_text for entry in data_entries]
+        tokens = [entry.tokens for entry in data_entries]
+        labels = [entry.labels for entry in data_entries]
 
-    texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = model_retrainer.split_dataset(texts, tokens, labels)
-    model_retrainer.get_model(s3)
+        # Process the data correctly
+        model_retrainer = ModelRetrainer(BLANK_NER)
+        texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = model_retrainer.split_dataset(texts, tokens, labels)
+        model_retrainer.get_model(s3_manager)
 
-    model_retrainer.retrain(texts_train, tokens_train, labels_train, 1)
-    model_retrainer.evaluate(texts_test, tokens_test, labels_test)
+        model_retrainer.retrain(texts_train, tokens_train, labels_train, 1)
+        model_retrainer.evaluate(texts_test, tokens_test, labels_test)
 
-    model_retrainer.save_and_upload_model(s3)
+        model_retrainer.save_and_upload_model(s3_manager)
 
+    finally:
+        session.close()  # Close session after test execution
