@@ -1,6 +1,6 @@
 import os
 import pytest
-from app.infra.database_manager import DatabaseManager
+from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.services.backend_service.preprocessor import Preprocessor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.constants import *
@@ -11,43 +11,34 @@ SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 
 @pytest.fixture(scope="function")
 def db_manager():
-    db = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    db.connect()
-    yield db
-    # db.clear(TABLE_NAME)
-    db.disconnect()
+    manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+    yield manager
+    manager.clear_table()
 
 def test_ingest_full_text_and_tokens_to_database(db_manager):
     object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    # Make sure the sample essay file is available
-    if not os.path.exists(SAMPLE_ESSAY_NO_LABELS):
-        object_store_manager.download(f"datasets/{SAMPLE_ESSAY_NO_LABELS}", SAMPLE_ESSAY_NO_LABELS)
+    # Ensure the sample essay file is available
+    sample_file_path = f"datasets/{SAMPLE_ESSAY_NO_LABELS}"
+    if not os.path.exists(sample_file_path):
+        object_store_manager.download(sample_file_path, SAMPLE_ESSAY_NO_LABELS)
 
-    # Assume the file download was successful
-    assert os.path.exists(SAMPLE_ESSAY_NO_LABELS)
+    assert os.path.exists(SAMPLE_ESSAY_NO_LABELS), "Sample essay file not downloaded correctly."
 
-    # Open the JSON file
+    # Open and process the JSON file
     with open(SAMPLE_ESSAY_NO_LABELS, "r") as sample_essay:
         preprocessor = Preprocessor()
-
-        # Obtain then preprocess data
         full_text = preprocessor.parse_json("sample_pii_data", sample_essay)
         tokens = preprocessor.tokenize(full_text)
 
-        # Insert data into the database
-        insert_success = preprocessor.ingest_to_database(db_manager=db_manager,
-                                                         full_text=full_text,
-                                                         tokens=tokens)
+        # Create and insert a new data entry
+        entry = DocumentEntry(full_text=full_text, tokens=tokens)
+        with db_manager.Session() as session:
+            session.add(entry)
+            session.commit()
 
-        # Check if the insertion was successful
-        assert insert_success == True, "Data insertion failed."
-
-        # Verify that the data was inserted correctly
-        query = """
-            SELECT full_text, tokens FROM document_table WHERE full_text = %s LIMIT 1
-        """
-        inserted_data = db_manager.query(query, (full_text,))
-        assert inserted_data is not None, "No data was inserted."
-        assert inserted_data[0] == full_text, "Inserted full text does not match."
-        assert inserted_data[1] == tokens, "Inserted tokens do not match."
+            # Verify that the data was inserted correctly
+            inserted_entry = session.query(DocumentEntry).filter(DocumentEntry.full_text == full_text).first()
+            assert inserted_entry is not None, "No data was inserted."
+            assert inserted_entry.full_text == full_text, "Inserted full text does not match."
+            assert inserted_entry.tokens == tokens, "Inserted tokens do not match."
