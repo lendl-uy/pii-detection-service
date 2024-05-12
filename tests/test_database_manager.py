@@ -15,13 +15,13 @@ def test_insert(db_manager):
     entry = DocumentEntry(full_text="Hello", tokens=["Hello"], labels=["B-NAME"], validated_labels=["B-NAME"], for_retrain=True)
     session = db_manager.Session()
     db_manager.add_entry(entry)
-    result = session.query(DocumentEntry).filter(DocumentEntry.full_text == "Hello").first()
+    result = db_manager.query_entries({"full_text": "Hello"}, 1)
     assert result is not None
-    assert result.full_text == "Hello"
-    assert result.tokens == ["Hello"]
-    assert result.labels == ["B-NAME"]
-    assert result.validated_labels == ["B-NAME"]
-    assert result.for_retrain is True
+    assert result[0].full_text == "Hello"
+    assert result[0].tokens == ["Hello"]
+    assert result[0].labels == ["B-NAME"]
+    assert result[0].validated_labels == ["B-NAME"]
+    assert result[0].for_retrain is True
     session.close()
 
 def test_update(db_manager):
@@ -30,11 +30,11 @@ def test_update(db_manager):
     try:
         entry = DocumentEntry(full_text="Hello", tokens=["Hello"], labels=["B-NAME"], validated_labels=["O"], for_retrain=True)
         session.add(entry)
-        session.commit() # Ensures the entry is persisted and session is still valid
+        session.commit()
 
         db_manager.update_entry(entry.doc_id, {"full_text": "Hello Updated"})
 
-        session.refresh(entry)  # Refresh the entry to get updated values from the database
+        session.refresh(entry)
         assert entry.full_text == "Hello Updated"
 
     finally:
@@ -45,9 +45,9 @@ def test_query(db_manager):
     entry = DocumentEntry(full_text="Query Test", tokens=["Test"], labels=["Query"], validated_labels=["Query"], for_retrain=False)
     session = db_manager.Session()
     db_manager.add_entry(entry)
-    result = session.query(DocumentEntry).filter(DocumentEntry.full_text == "Query Test").first()
-    assert result is not DocumentEntry
-    assert result.full_text == "Query Test"
+    filter_criteria = {"full_text": "Query Test"}
+    result = db_manager.query_entries(filter_criteria, 1)
+    assert result[0].full_text == "Query Test"
     session.close()
 
 def test_clear(db_manager):

@@ -1,12 +1,9 @@
 import pytest
-from app.services.ml_service.constants import BLANK_NER, PRETRAINED_EN_NER
+from app.services.ml_service.constants import BLANK_NER, PRETRAINED_EN_NER, sample_text, sample_tokens
 from app.services.ml_service.predictor import Predictor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.infra.constants import *
-
-sample_text = "John Doe, a 35-year-old software engineer, lives at 1234 Maple Drive, Springfield, IL. He moved there in June 2015. You can reach him at his personal email, john.doe@example.com, or his mobile phone, 555-123-4567. John's previous address was 987 Elm Street, Centerville, OH."
-sample_tokens = ['John', 'Doe', ',', 'a', '35', '-', 'year', '-', 'old', 'software', 'engineer', ',', 'lives', 'at', '1234', 'Maple', 'Drive', ',', 'Springfield', ',', 'IL', '.', 'He', 'moved', 'there', 'in', 'June', '2015', '.', 'You', 'can', 'reach', 'him', 'at', 'his', 'personal', 'email', ',', 'john', '.', 'doe', '@', 'example', '.', 'com', ',', 'or', 'his', 'mobile', 'phone', ',', '555', '-', '123', '-', '4567', '.', 'John', "'", 's', 'previous', 'address', 'was', '987', 'Elm', 'Street', ',', 'Centerville', ',', 'OH', '.']
 
 @pytest.fixture(scope="module")
 def model():
@@ -45,7 +42,7 @@ def test_predict_sample_document_from_test_set(model):
 
         # Reload the entry to ensure predictions are stored
         session.refresh(entry)
-        print(f"\n\nentry.labels = {entry.labels}")
+
         assert entry.labels == predictor.predictions, "Inserted labels do not match."
 
     finally:

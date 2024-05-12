@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.infra.constants import TABLE_NAME
+import logging
 
 # Updated import path for declarative_base
 Base = declarative_base()
@@ -23,8 +24,12 @@ class DatabaseManager:
 
     def add_entry(self, entry):
         with self.Session() as session:
-            session.add(entry)
-            session.commit()
+            try:
+                session.add(entry)
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                print(f"Failed to add entry: {e}")
 
     def update_entry(self, entry_id, update_dict):
         with self.Session() as session:
@@ -36,11 +41,13 @@ class DatabaseManager:
             else:
                 raise ValueError("Entry not found")
 
-    def query_entries(self, filter_dict):
+    def query_entries(self, filter_dict, limit=None):
         with self.Session() as session:
             query = session.query(DocumentEntry)
             for key, value in filter_dict.items():
                 query = query.filter(getattr(DocumentEntry, key) == value)
+            if limit is not None:
+                query = query.limit(limit)
             return query.all()
 
     def clear_table(self):
