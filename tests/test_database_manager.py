@@ -32,7 +32,7 @@ def test_update(db_manager):
         session.add(entry)
         session.commit()
 
-        db_manager.update_entry(entry.doc_id, {"full_text": "Hello Updated"})
+        db_manager.update_entry({"doc_id": entry.doc_id}, {"full_text": "Hello Updated"})
 
         session.refresh(entry)
         assert entry.full_text == "Hello Updated"

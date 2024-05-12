@@ -16,7 +16,7 @@ def model():
     yield db_manager, predictor
 
     predictor.delete_model(PRETRAINED_EN_NER)
-    db_manager.clear_table()
+    # db_manager.clear_table()
 
 def test_predict_sample_document_from_test_set(model):
     db_manager, predictor = model
@@ -25,8 +25,7 @@ def test_predict_sample_document_from_test_set(model):
     try:
         # Insert sample data into the database
         entry = DocumentEntry(full_text=sample_text, tokens=sample_tokens)
-        session.add(entry)
-        session.commit()
+        db_manager.add_entry(entry)
 
         # Retrieve the first document from the database and predict
         document = session.query(DocumentEntry).first()
@@ -41,9 +40,9 @@ def test_predict_sample_document_from_test_set(model):
         assert isinstance(predictor.predictions, list), "Predictions should be a list."
 
         # Reload the entry to ensure predictions are stored
-        session.refresh(entry)
+        entry = db_manager.query_entries({"full_text": text}, 1)
 
-        assert entry.labels == predictor.predictions, "Inserted labels do not match."
+        assert entry[0].labels == predictor.predictions, "Inserted labels do not match."
 
     finally:
         session.close()
