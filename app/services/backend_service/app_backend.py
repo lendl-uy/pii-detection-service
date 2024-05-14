@@ -100,6 +100,18 @@ def handle_documents():
 
 
 
+#add security feature only allowing ML_service to call this endpoint
+@app.route('/labels/<int:document_id>', methods=['POST'])
+def save_labels(document_id):
+    data = request.json
+    labels = data.get('labels')
+
+    postgres_client = PostgresDB()
+    postgres_client.connect()
+
+    postgres_client.save_labels(document_id, labels)
+
+    return jsonify({"message": "Labels saved"}), 200
 
 
 # Get individual document by ID

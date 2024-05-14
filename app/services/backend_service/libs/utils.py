@@ -59,3 +59,8 @@ class PostgresDB:
         self.cur.execute("UPDATE document_table SET validated_labels = %s WHERE doc_id = %s", (validated_labels, doc_id))
         self.conn.commit()
         return {"doc_id": doc_id, "labels": validated_labels}
+
+    def save_labels(self, doc_id,predicted_labels):
+        self.cur.execute("UPDATE document_table SET labels = %s WHERE doc_id = %s", (predicted_labels, doc_id))
+        self.conn.commit()
+        return {"doc_id": doc_id, "labels": predicted_labels}
