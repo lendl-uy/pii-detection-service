@@ -2,6 +2,7 @@ import psycopg2
 import os
 import json
 from dotenv import load_dotenv
+from app.infra.constants import *
 
 class PostgresDB:
     def __init__(self):
@@ -10,15 +11,15 @@ class PostgresDB:
         load_dotenv(dotenv_path='../.env') 
 
     def connect(self):
-        DB_NAME = os.getenv("DB_NAME")
-        DB_USER = os.getenv("DB_USER")
-        DB_PASSWORD = os.getenv("DB_PASSWORD")
-        DB_HOST = os.getenv("DB_HOST")
-        DB_PORT = os.getenv("DB_PORT")
+        #DB_NAME = os.getenv("DB_NAME")
+        #DB_USER = os.getenv("DB_USER")
+        DB_PASSWORD = DB_PASS
+        #DB_HOST = os.getenv("DB_HOST")
+        #DB_PORT = os.getenv("DB_PORT")
 
         self.conn = psycopg2.connect(
             dbname=DB_NAME, user=DB_USER,
-            password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+            password=DB_PASSWORD, host=DB_HOST, port=5432
         )
         self.cur = self.conn.cursor()
 
@@ -32,10 +33,13 @@ class PostgresDB:
 
     def get_document(self,document_id):
         print("document_id",document_id)
-        self.cur.execute("SELECT doc_id, tokens, labels FROM document_table WHERE doc_id = %s", (document_id,))
+        self.cur.execute("SELECT doc_id, tokens, labels, validated_labels FROM document_table WHERE doc_id = %s", (document_id,))
         document = self.cur.fetchone()
         if document:
-            return {"doc_id" :document_id,"tokens": document[1], "labels":document[2]  }
+            if document[3]:
+                return {"doc_id" :document_id,"tokens": document[1], "labels":document[3]  }
+            else:
+                return {"doc_id" :document_id,"tokens": document[1], "labels":document[2]  }
         else:
             return None
 
@@ -50,3 +54,8 @@ class PostgresDB:
             return result
         else:
             return None
+    
+    def validate(self, doc_id,validated_labels):
+        self.cur.execute("UPDATE document_table SET validated_labels = %s WHERE doc_id = %s", (validated_labels, doc_id))
+        self.conn.commit()
+        return {"doc_id": doc_id, "labels": validated_labels}
