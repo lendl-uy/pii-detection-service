@@ -57,3 +57,11 @@ Key contributors to this repository are the following:
   * apps/ml_service
 * infra
 * cicd
+
+## CICD Workflows
+* Infra Setup: make sure infra setup is still intact
+* Backend Services
+* ML Services
+
+Action Items:
+- modify boto3 s3 client creation by utilizing AWS ACCESS KEY & SECRET KEY
