@@ -1,13 +1,11 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY
 from sqlalchemy.orm import declarative_base, sessionmaker
-from app.infra.constants import TABLE_NAME
-import logging
 
 # Updated import path for declarative_base
 Base = declarative_base()
 
 class DocumentEntry(Base):
-    __tablename__ = f"{TABLE_NAME}"
+    __tablename__ = "document_table"
     doc_id = Column(Integer, primary_key=True)
     full_text = Column(String)
     tokens = Column(ARRAY(String))

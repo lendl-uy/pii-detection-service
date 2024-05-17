@@ -1,9 +1,21 @@
 import pytest
+import os
+from dotenv import load_dotenv
+
 from app.services.ml_service.constants import BLANK_NER, PRETRAINED_EN_NER, sample_text, sample_tokens
 from app.services.ml_service.predictor import Predictor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.database_manager import DatabaseManager, DocumentEntry
-from app.infra.constants import *
+
+# For local testing only
+# Load environment variables from .env file
+load_dotenv()
+
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_NAME")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 @pytest.fixture(scope="module")
 def model():

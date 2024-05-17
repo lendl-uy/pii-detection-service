@@ -2,9 +2,14 @@ import pytest
 import os
 import boto3
 from moto import mock_aws
+from dotenv import load_dotenv
 from app.infra.object_store_manager import ObjectStoreManager
-from app.infra.constants import S3_BUCKET_NAME
 
+# For local testing only
+# Load environment variables from .env file
+load_dotenv()
+
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 @pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""

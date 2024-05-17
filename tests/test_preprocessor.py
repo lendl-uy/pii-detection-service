@@ -1,13 +1,22 @@
 import os
 import pytest
+from dotenv import load_dotenv
+
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.services.backend_service.preprocessor import Preprocessor
 from app.infra.object_store_manager import ObjectStoreManager
-from app.infra.constants import *
 
-# For database testing
-SAMPLE_ESSAY_NO_LABELS = "sample_input.json"
-SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
+# For local testing only
+# Load environment variables from .env file
+load_dotenv()
+
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_NAME")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+SAMPLE_ESSAY_NO_LABELS = os.getenv("SAMPLE_ESSAY_NO_LABELS")
+SAMPLE_ESSAY_WITH_LABELS = os.getenv("SAMPLE_ESSAY_WITH_LABELS")
 
 @pytest.fixture(scope="function")
 def db_manager():

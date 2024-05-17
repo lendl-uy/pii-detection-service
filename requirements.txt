@@ -13,3 +13,4 @@ pytest
 moto
 sqlalchemy
 Flask
+python-dotenv

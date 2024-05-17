@@ -12,28 +12,11 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 from app.services.ml_service.constants import *
-from app.infra.constants import TABLE_NAME
 
 class ModelRetrainer:
 
     def __init__(self, model_name):
         self.model_name = model_name
-
-    def get_dataset(self, db_manager):
-        query = f"""
-                    SELECT full_text, tokens, labels FROM {TABLE_NAME} 
-                    WHERE for_retrain = true 
-                    LIMIT 100
-                """
-        result = db_manager.query(query)
-
-        if result is None:
-            raise RuntimeError("No data was found from the database.")
-        else:
-            full_texts = [item[0] for item in result]
-            tokens = [item[1] for item in result]
-            labels = [item[2] for item in result]
-            return full_texts, tokens, labels
 
     def split_dataset(self, texts, tokens, labels):
         # Zip the data together
@@ -163,10 +146,12 @@ class ModelRetrainer:
         recall = scorer["ents_r"]
         f5_score = self.fbeta_score(precision, recall, beta=5)
 
-        print("Evaluation Metrics:")
-        print(f"F5-Score: {f5_score}")
-        print(f"Precision: {precision}")
-        print(f"Recall: {recall}")
+        # print("Evaluation Metrics:")
+        # print(f"F5-Score: {f5_score}")
+        # print(f"Precision: {precision}")
+        # print(f"Recall: {recall}")
+
+        return f5_score
 
     def extract_model_name_regex(self, str):
         # Match any characters up to the last occurrence of a potential date pattern
