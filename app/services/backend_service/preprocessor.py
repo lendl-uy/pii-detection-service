@@ -1,6 +1,5 @@
 import json
 import re
-from app.services.backend_service.constants import DB_TABLE
 
 class Preprocessor:
 
