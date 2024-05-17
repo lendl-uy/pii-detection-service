@@ -1,15 +1,27 @@
-from flask import Flask, request, jsonify
 import requests
 import logging
 import time
+import os
+from flask import Flask, request, jsonify
+from dotenv import load_dotenv
 
 from app.infra.database_manager import DatabaseManager, DocumentEntry
-from app.infra.constants import DB_HOST, DB_USER, DB_PASS, DB_NAME, S3_BUCKET_NAME
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
 from app.services.ml_service.model_retrainer import ModelRetrainer
 from app.services.ml_service.constants import PRETRAINED_EN_NER
 
+# For local testing only
+# Load environment variables from .env file
+load_dotenv()
+
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_NAME = os.getenv("DB_NAME")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+
+# Instantiate Flask application
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,58 +37,89 @@ def predict():
     predictor = Predictor(PRETRAINED_EN_NER)
     predictor.get_model(PRETRAINED_EN_NER, s3_manager)
 
-    # Retrieve the document to be predicted with ID specified by the
-    # preprocessor endpoint
+    # Retrieve the document to be predicted with ID specified by the preprocessor endpoint
     logger.info("Retrieving the document")
     entry = db_manager.query_entries(limit=1)
     full_text = entry[0].full_text if entry else None
+
+    if not full_text:
+        logger.info("No document found for prediction.")
+        return {"status": "FAILED", "message": "Document not found."}, 400
 
     # Perform predictions on the input full text
     logger.info("Predicting PIIs from the given full text")
     start_time = time.time()
     predictor.predict(full_text, PRETRAINED_EN_NER)
-    runtime = str(time.time() - start_time) + " s"
+    runtime = time.time() - start_time
 
-    db_manager.update_entry({"doc_id": entry[0].doc_id}, {"labels": predictor.predictions})
-    entry = db_manager.query_entries({"doc_id": entry[0].doc_id}, 1)
+    # Update the database with predictions
     if entry:
-        entry[0].labels = predictor.predictions
-        requests.post("http://127.0.0.1:5000/ml_response_handler")
-        return {"status": "SUCCESS", "document_id": entry[0].doc_id, "runtime": runtime}, 200
+        db_manager.update_entry({"doc_id": entry[0].doc_id}, {"labels": predictor.predictions})
+        updated_entry = db_manager.query_entries({"doc_id": entry[0].doc_id}, 1)[0]
+
+        # Construct the data to send to the backend
+        prediction_data = {
+            "document_id": updated_entry.doc_id,
+            "predictions": updated_entry.labels,
+            "runtime": f"{runtime:.2f} s"
+        }
+
+        # Send predictions to the backend service
+        response = requests.post("http://127.0.0.1:5000/ml_response_handler", json=prediction_data)
+        if response.status_code == 200:
+            return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
+        else:
+            logger.error("Failed to send data to backend service.")
+            return {"status": "FAILED", "message": "Error sending data to backend service."}, 500
     else:
-        logger.info("Document not found in the database.")
-        return {"status": "FAILED"}, 400
+        logger.info("Document not found in the database after update.")
+        return {"status": "FAILED", "message": "Document not updated correctly."}, 400
+
 
 @app.route("/retrain", methods=["POST"])
 def retrain():
-    logger.info("Model re-training endpoint!")
+    logger.info("Initiating model re-training process.")
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    # Retrieve data for training
-    entries = db_manager.query_entries({"for_retrain": True}, limit=100)
-    # doc_ids = [entry.doc_id for entry in entries]
-    # doc_ids.sort()
-    if len(entries) < 1:
-        return {"status": "Failed", "message": {"Insufficient dataset size for re-training"}}, 200
-    texts = [entry.full_text for entry in entries]
-    tokens = [entry.tokens for entry in entries]
-    labels = [entry.labels for entry in entries]
+    try:
+        # Retrieve data flagged for re-training
+        entries = db_manager.query_entries({"for_retrain": True}, limit=100)
+        if len(entries) < 3:  # Ensure there is enough data to retrain
+            logger.warning("Insufficient data for re-training.")
+            return {"status": "Failed", "message": "Insufficient dataset size for re-training"}, 200
 
-    # Process the data correctly
-    model_retrainer = ModelRetrainer(PRETRAINED_EN_NER)
-    texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = model_retrainer.split_dataset(texts,
-                                                                                                                  tokens,
-                                                                                                                  labels)
-    model_retrainer.get_model(s3_manager)
+        # Extract data components
+        texts = [entry.full_text for entry in entries]
+        tokens = [entry.tokens for entry in entries]
+        labels = [entry.labels for entry in entries]
 
-    start_time = time.time()
-    model_retrainer.retrain(texts_train, tokens_train, labels_train, 1)
-    runtime = str(time.time() - start_time) + " s"
-    model_retrainer.evaluate(texts_test, tokens_test, labels_test)
-    db_manager.update_entry({"for_retrain": True}, {"for_retrain": False})
+        # Initialize the model retrainer
+        model_retrainer = ModelRetrainer(PRETRAINED_EN_NER)
+        model_retrainer.get_model(s3_manager)
 
-    return {"status": "Success", "runtime": runtime}, 200
+        # Split the dataset
+        split_data = model_retrainer.split_dataset(texts, tokens, labels)
+        texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = split_data
+
+        # Retrain the model
+        start_time = time.time()
+        model_retrainer.retrain(texts_train, tokens_train, labels_train, 1)
+        runtime = time.time() - start_time
+        logger.info(f"Model re-trained in {runtime:.2f} seconds.")
+
+        # Evaluate the model
+        f5_score = model_retrainer.evaluate(texts_test, tokens_test, labels_test)
+        logger.info(f"Model F5-Score: {f5_score}")
+
+        # Reset the re-training flag
+        db_manager.update_entry({"for_retrain": True}, {"for_retrain": False})
+
+        return {"status": "Success", "runtime": f"{runtime:.2f} s", "evaluation": f5_score}, 200
+
+    except Exception as e:
+        logger.error(f"Error during re-training: {str(e)}")
+        return {"status": "Failed", "message": str(e)}, 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
