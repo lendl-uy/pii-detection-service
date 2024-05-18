@@ -25,9 +25,11 @@ class DatabaseManager:
             try:
                 session.add(entry)
                 session.commit()
+                return entry.doc_id  # doc_id will be populated after commit if the insert is successful
             except Exception as e:
                 session.rollback()
                 print(f"Failed to add entry: {e}")
+                return None
 
     def update_entry(self, filter_dict, update_dict):
         with self.Session() as session:

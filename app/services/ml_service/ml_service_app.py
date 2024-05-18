@@ -9,7 +9,7 @@ from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
 from app.services.ml_service.model_retrainer import ModelRetrainer
-from app.services.ml_service.constants import PRETRAINED_EN_NER
+from app.services.ml_service.constants import PRETRAINED_EN_NER, ROW_COUNT_THRESHOLD_FOR_RETRAINING
 
 # For local testing only
 # Load environment variables from .env file
@@ -28,19 +28,27 @@ logger = logging.getLogger(__name__)
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    data = request.json
+    doc_id = data.get("doc_id")
+
+    if not doc_id:
+        return jsonify({"status": "FAILED", "message": "No document ID provided."}), 400
+
     # Instantiate connections to the database and the object store
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
+
+    # Retrieve the document to be predicted with ID specified by the preprocessor endpoint
+    logger.info("Retrieving the document")
+    entry = db_manager.query_entries({"doc_id": doc_id}, limit=1)
+    if not entry:
+        return jsonify({"status": "FAILED", "message": "Document not found."}), 404
+    full_text = entry[0].full_text
 
     # Instantiate the predictor
     logger.info("Pulling the latest model")
     predictor = Predictor(PRETRAINED_EN_NER)
     predictor.get_model(PRETRAINED_EN_NER, s3_manager)
-
-    # Retrieve the document to be predicted with ID specified by the preprocessor endpoint
-    logger.info("Retrieving the document")
-    entry = db_manager.query_entries(limit=1)
-    full_text = entry[0].full_text if entry else None
 
     if not full_text:
         logger.info("No document found for prediction.")
@@ -50,6 +58,7 @@ def predict():
     logger.info("Predicting PIIs from the given full text")
     start_time = time.time()
     predictor.predict(full_text, PRETRAINED_EN_NER)
+    logger.info("Done predicting PIIs")
     runtime = time.time() - start_time
 
     # Update the database with predictions
@@ -58,14 +67,14 @@ def predict():
         updated_entry = db_manager.query_entries({"doc_id": entry[0].doc_id}, 1)[0]
 
         # Construct the data to send to the backend
-        prediction_data = {
+        predictor_response = {
             "document_id": updated_entry.doc_id,
-            "predictions": updated_entry.labels,
             "runtime": f"{runtime:.2f} s"
         }
 
         # Send predictions to the backend service
-        response = requests.post("http://127.0.0.1:5000/ml_response_handler", json=prediction_data)
+        headers = {"Content-Type": "application/json"}
+        response = requests.post("http://127.0.0.1:5000/ml-response-handler", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
@@ -84,7 +93,7 @@ def retrain():
 
     try:
         # Retrieve data flagged for re-training
-        entries = db_manager.query_entries({"for_retrain": True}, limit=100)
+        entries = db_manager.query_entries({"for_retrain": True}, limit=ROW_COUNT_THRESHOLD_FOR_RETRAINING)
         if len(entries) < 3:  # Ensure there is enough data to retrain
             logger.warning("Insufficient data for re-training.")
             return {"status": "Failed", "message": "Insufficient dataset size for re-training"}, 200

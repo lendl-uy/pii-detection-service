@@ -12,6 +12,7 @@ INITIAL_TEST_SET = "test.json"
 EPOCHS = 5
 DROPOUT_RATE = 0.3
 TRAIN_SET_PERCENTAGE = 0.3
+ROW_COUNT_THRESHOLD_FOR_RETRAINING = 100
 
 # Sample data for the predictor
 sample_text = "John Doe, a 35-year-old software engineer, lives at 1234 Maple Drive, Springfield, IL. He moved there in June 2015. You can reach him at his personal email, john.doe@example.com, or his mobile phone, 555-123-4567. John's previous address was 987 Elm Street, Centerville, OH."
