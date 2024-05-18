@@ -24,8 +24,12 @@ class Predictor:
         model_path = f"{model_name}.zip"
         if not os.path.exists(model_name):
             print("Model not found! Downloading from AWS S3")
-            object_store.download(f"{MODELS_DIRECTORY}/{model_name}.zip", model_path)
+            response = object_store.download(f"{MODELS_DIRECTORY}/{model_name}.zip", model_path)
+            print(f"Response:\n{response}")
+
             print("Preparing the downloaded model")
+            print(f"Extracting the model from {model_path}")
+            print(f"Extracting to {os.getcwd()}")
             self.extract_zip(model_path, os.getcwd())
             os.remove(model_path)
 
