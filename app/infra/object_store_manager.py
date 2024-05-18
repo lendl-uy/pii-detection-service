@@ -7,6 +7,9 @@ class ObjectStoreManager:
         self.AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
         self.AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
+        print(f"Access Key: {self.AWS_ACCESS_KEY_ID}")
+        print(f"Secret Key: {self.AWS_SECRET_ACCESS_KEY}")
+
         self.name = name
         self.s3_client = boto3.client("s3", aws_access_key_id=self.AWS_ACCESS_KEY_ID, aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY)
 
