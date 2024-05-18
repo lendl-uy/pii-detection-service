@@ -1,10 +1,14 @@
+import os
 import pytest
 from app.infra.database_manager import DatabaseManager, DocumentEntry
-from app.infra.constants import DB_HOST, DB_USER, DB_PASS, DB_NAME
 
 @pytest.fixture(scope="module")
 def db_manager():
     """Fixture to connect to the database before tests and disconnect afterwards."""
+    DB_HOST = os.getenv("DB_HOST")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_NAME = os.getenv("DB_NAME")
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
     # Teardown: Clear the database
