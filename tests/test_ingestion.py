@@ -3,7 +3,6 @@ import pytest
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 from app.services.backend_service.preprocessor import Preprocessor
 from app.infra.object_store_manager import ObjectStoreManager
-from app.infra.constants import *
 
 # For database testing
 SAMPLE_ESSAY_NO_LABELS = "sample_input.json"
@@ -11,13 +10,22 @@ SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 
 @pytest.fixture(scope="function")
 def db_manager():
+    """
+    Fixture for setting up and tearing down the database manager.
+    """
+    DB_HOST = os.getenv("DB_HOST")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASS = os.getenv("DB_PASS")
+    DB_NAME = os.getenv("DB_NAME")
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
     manager.clear_table()
 
 def test_ingest_full_text_and_tokens_to_database(db_manager):
-    print("Current Working Directory:", os.getcwd())
-
+    """
+    Test that full text and tokens can be ingested into the database.
+    """
+    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
     object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     # Ensure the sample essay file is available
