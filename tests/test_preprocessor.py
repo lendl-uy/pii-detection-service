@@ -25,6 +25,8 @@ def db_manager():
     manager.clear_table()
 
 def test_ingest_full_text_and_tokens_to_database(db_manager):
+    print("Current Working Directory:", os.getcwd())
+
     object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     # Ensure the sample essay file is available
