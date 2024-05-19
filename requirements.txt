@@ -12,3 +12,5 @@ scikit-learn
 pytest
 moto
 sqlalchemy
+Flask
+python-dotenv

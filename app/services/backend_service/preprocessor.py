@@ -1,6 +1,5 @@
 import json
 import re
-from app.services.backend_service.constants import DB_TABLE
 
 class Preprocessor:
 
@@ -23,12 +22,3 @@ class Preprocessor:
         self.tokens = re.findall(r'\n\n+|\\u[0-9a-fA-F]{4}|[^\w\s]|[\w]+', full_text)
 
         return self.tokens
-
-    def ingest_to_database(self, full_text, tokens, db_manager):
-        insert_success = db_manager.insert(DB_TABLE,
-                                           full_text=full_text,
-                                           tokens=tokens)
-
-        if insert_success is False:
-            return False
-        return True

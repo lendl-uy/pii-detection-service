@@ -1,12 +1,11 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY
 from sqlalchemy.orm import declarative_base, sessionmaker
-from app.infra.constants import TABLE_NAME
 
 # Updated import path for declarative_base
 Base = declarative_base()
 
 class DocumentEntry(Base):
-    __tablename__ = f"{TABLE_NAME}"
+    __tablename__ = "document_table"
     doc_id = Column(Integer, primary_key=True)
     full_text = Column(String)
     tokens = Column(ARRAY(String))
@@ -23,24 +22,40 @@ class DatabaseManager:
 
     def add_entry(self, entry):
         with self.Session() as session:
-            session.add(entry)
-            session.commit()
+            try:
+                session.add(entry)
+                session.commit()
+                return entry.doc_id  # doc_id will be populated after commit if the insert is successful
+            except Exception as e:
+                session.rollback()
+                print(f"Failed to add entry: {e}")
+                return None
 
-    def update_entry(self, entry_id, update_dict):
+    def update_entry(self, filter_dict, update_dict):
         with self.Session() as session:
-            entry = session.query(DocumentEntry).filter(DocumentEntry.doc_id == entry_id).one_or_none()
-            if entry is not None:
+            entries = session.query(DocumentEntry)
+            for key, value in filter_dict.items():
+                entries = entries.filter(getattr(DocumentEntry, key) == value)
+            if entries.count() == 0:
+                raise ValueError("No entries found matching the filter criteria.")
+
+            updated_count = 0
+            for entry in entries:
                 for key, value in update_dict.items():
                     setattr(entry, key, value)
-                session.commit()
-            else:
-                raise ValueError("Entry not found")
+                updated_count += 1
 
-    def query_entries(self, filter_dict):
+            session.commit()
+            return updated_count
+
+    def query_entries(self, filter_dict=None, limit=None):
         with self.Session() as session:
             query = session.query(DocumentEntry)
-            for key, value in filter_dict.items():
-                query = query.filter(getattr(DocumentEntry, key) == value)
+            if filter_dict:
+                for key, value in filter_dict.items():
+                    query = query.filter(getattr(DocumentEntry, key) == value)
+            if limit is not None:
+                query = query.limit(limit)
             return query.all()
 
     def clear_table(self):
