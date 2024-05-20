@@ -31,13 +31,17 @@ dbm = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("home.html")
+
+@app.route("/save-essay-view")
+def save_essay_view():
+    return render_template("save_essay_view.html")
 
 @app.route("/save-essay", methods=["POST"])
 def save_essay():
     # Get the essay data from the request
     data = request.json
-    essay = data.get("essay")
+    essay = data["essay"]
     logger.info(f"Essay = {essay}")
 
     if essay:
@@ -53,7 +57,7 @@ def save_essay():
             doc_id = dbm.add_entry(entry)
 
             # Asynchronously call predict endpoint
-            response = requests.post("http://127.0.0.1:5001/predict", json={"doc_id": doc_id})
+            response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
             return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
         except psycopg2.Error as e:
             return {"message": "Error saving essay to database: {}".format(e)}, 500
@@ -77,10 +81,16 @@ def handle_ml_service_response():
         logger.info(f"Received response for doc_id = {doc_id}")
         logger.info(f"Prediction runtime: {runtime}")
 
-        # Here, you would typically update the database entry for the document with new data
-        # Assuming you have a function update_document_entry that handles database updates
-        return jsonify({"status": "SUCCESS", "message": "Document updated with predictions successfully"}), 200
+        entry = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+        tokens = entry[0].tokens
+        predictions = entry[0].labels
+        logger.info(f"tokens: {tokens}")
+        logger.info(f"predictions: {predictions}")
 
+        if predictions:
+            return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+        else:
+            return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
     except Exception as e:
         logger.error(f"Error processing Predictor response: {str(e)}")
         return jsonify({"status": "FAILED", "message": "Error processing the Predictor response"}), 500
@@ -89,7 +99,7 @@ def handle_ml_service_response():
 @app.route("/documents", methods=["GET", "POST"])
 def handle_documents():
     if request.method == "GET":
-        entries = dbm.query_entries(limit=10)
+        entries = dbm.query_entries(table=DocumentEntry, limit=10)
         documents = [{'doc_id': doc.doc_id, 'full_text': doc.full_text} for doc in entries]  # Assuming each entry has a 'name'
         logger.info(f"Documents: {documents}")
         return jsonify(documents)
@@ -118,7 +128,6 @@ def save_labels(document_id):
 
     return jsonify({"message": "Labels saved"}), 200
 
-
 # Get individual document by ID
 @app.route("/documents/<int:document_id>", methods=["GET", "PATCH"])
 def get_document(document_id):
@@ -136,7 +145,9 @@ def get_document(document_id):
         return jsonify({"message": "Document validated"}), 200
 
     # default to get
-    entry = dbm.query_entries({"doc_id": document_id}, limit=1)
+    entry = dbm.query_entries(DocumentEntry,
+                              {"doc_id": document_id},
+                              limit=1)
     document = entry[0].full_text
 
     if document:
@@ -146,4 +157,4 @@ def get_document(document_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

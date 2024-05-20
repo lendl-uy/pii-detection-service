@@ -10,6 +10,8 @@ from app.infra.object_store_manager import ObjectStoreManager
 load_dotenv()
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 @pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
@@ -28,7 +30,8 @@ def s3_client(aws_credentials):
 @pytest.fixture
 def object_store_manager(s3_client):
     """Create an ObjectStoreManager instance with a mocked S3 client."""
-    return ObjectStoreManager(S3_BUCKET_NAME)
+    return ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+
 
 def test_upload(object_store_manager):
     """Test the upload functionality."""

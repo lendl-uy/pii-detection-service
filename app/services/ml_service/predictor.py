@@ -45,10 +45,9 @@ class Predictor:
         doc = nlp(document)
         self.predictions = [(token.ent_type_ if token.ent_type_.startswith(('B-', 'I-')) else "O") for token in doc]
 
-    def save_predictions_to_database(self, session):
-        entry = session.query(DocumentEntry).filter_by(full_text=self.document).first()
+    def save_predictions_to_database(self, db_manager):
+        entry = db_manager.query_entries(DocumentEntry, {"full_text": self.document}, limit=1)[0]
         if entry:
-            entry.labels = self.predictions
-            session.commit()
+            db_manager.update_entry(DocumentEntry, {"full_text": self.document}, {"labels": self.predictions})
         else:
             print("Document not found in the database.")
