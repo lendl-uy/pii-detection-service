@@ -1,4 +1,5 @@
 import os
+import logging
 import pytest
 from app.services.ml_service.constants import BLANK_NER, PRETRAINED_EN_NER
 from app.services.ml_service.predictor import Predictor
@@ -7,6 +8,8 @@ from app.infra.database_manager import DatabaseManager, DocumentEntry
 
 sample_text = "John Doe, a 35-year-old software engineer, lives at 1234 Maple Drive, Springfield, IL. He moved there in June 2015. You can reach him at his personal email, john.doe@example.com, or his mobile phone, 555-123-4567. John's previous address was 987 Elm Street, Centerville, OH."
 sample_tokens = ['John', 'Doe', ',', 'a', '35', '-', 'year', '-', 'old', 'software', 'engineer', ',', 'lives', 'at', '1234', 'Maple', 'Drive', ',', 'Springfield', ',', 'IL', '.', 'He', 'moved', 'there', 'in', 'June', '2015', '.', 'You', 'can', 'reach', 'him', 'at', 'his', 'personal', 'email', ',', 'john', '.', 'doe', '@', 'example', '.', 'com', ',', 'or', 'his', 'mobile', 'phone', ',', '555', '-', '123', '-', '4567', '.', 'John', "'", 's', 'previous', 'address', 'was', '987', 'Elm', 'Street', ',', 'Centerville', ',', 'OH', '.']
+
+logging.basicConfig(level=logging.DEBUG)
 
 @pytest.fixture(scope="module")
 def model():
@@ -46,6 +49,15 @@ def test_predict_sample_document_from_test_set(model):
     print(f"AWS_ACCESS_KEY_ID = {os.getenv('AWS_ACCESS_KEY_ID')}")
     print(f"AWS_SECRET_ACCESS_KEY = {os.getenv('AWS_SECRET_ACCESS_KEY')}")
     print(f"S3_BUCKET_NAME = {os.getenv('S3_BUCKET_NAME')}")
+
+    # LOGGING
+    logging.debug(f"DB_HOST = {os.getenv('DB_HOST')}")
+    logging.debug(f"DB_USER = {os.getenv('DB_USER')}")
+    logging.debug(f"DB_PASS = {os.getenv('DB_PASS')}")
+    logging.debug(f"DB_NAME = {os.getenv('DB_NAME')}")
+    logging.debug(f"AWS_ACCESS_KEY_ID = {os.getenv('AWS_ACCESS_KEY_ID')}")
+    logging.debug(f"AWS_SECRET_ACCESS_KEY = {os.getenv('AWS_SECRET_ACCESS_KEY')}")
+    logging.debug(f"S3_BUCKET_NAME = {os.getenv('S3_BUCKET_NAME')}")
 
     try:
         # Insert sample data into the database
