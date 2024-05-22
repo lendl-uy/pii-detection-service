@@ -1,0 +1,9 @@
+spacy
+tqdm
+psycopg2-binary
+ipykernel
+boto3
+scikit-learn
+pytest
+moto
+sqlalchemy
