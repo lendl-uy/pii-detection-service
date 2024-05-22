@@ -26,7 +26,7 @@ def model():
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    predictor = Predictor(PRETRAINED_EN_NER)
+    predictor = Predictor(S3_BUCKET_NAME)
     predictor.get_model(PRETRAINED_EN_NER, s3_manager)
 
     yield db_manager, predictor
