@@ -38,6 +38,15 @@ def test_predict_sample_document_from_test_set(model):
     db_manager, predictor = model
     session = db_manager.Session()
 
+    # PRINT ENVIRONMENT VARIABLES
+    print(f"DB_HOST = {os.getenv('DB_HOST')}")
+    print(f"DB_USER = {os.getenv('DB_USER')}")
+    print(f"DB_PASS = {os.getenv('DB_PASS')}")
+    print(f"DB_NAME = {os.getenv('DB_NAME')}")
+    print(f"AWS_ACCESS_KEY_ID = {os.getenv('AWS_ACCESS_KEY_ID')}")
+    print(f"AWS_SECRET_ACCESS_KEY = {os.getenv('AWS_SECRET_ACCESS_KEY')}")
+    print(f"S3_BUCKET_NAME = {os.getenv('S3_BUCKET_NAME')}")
+
     try:
         # Insert sample data into the database
         entry = DocumentEntry(full_text=sample_text, tokens=sample_tokens)

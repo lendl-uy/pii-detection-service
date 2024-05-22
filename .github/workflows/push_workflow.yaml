@@ -20,27 +20,18 @@ jobs:
                   pip install -r deployment-requirements.txt
 
             - name: Get DB secrets
-              run: |
-                echo "DB_HOST=${{ secrets.DB_HOST }}" >> $GITHUB_ENV
-                echo "DB_NAME=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
-                echo "DB_USER=${{ secrets.DB_USER }}" >> $GITHUB_ENV
-                echo "DB_PASS=${{ secrets.DB_PASS }}" >> $GITHUB_ENV
+              run: python -c 'import os;print(os.environ)'
+              env:
+                DB_HOST: ${{ secrets.DB_HOST }}
+                DB_NAME: ${{ secrets.DB_NAME }}
+                DB_USER: ${{ secrets.DB_USER }}
+                DB_PASS: ${{ secrets.DB_PASS }}
 
             - name: Get AWS secrets
-              run: |
-                echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-                echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-                echo "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" >> $GITHUB_ENV
-            
-            - name: Print secrets
-              run: |
-                echo "DB_HOST=$DB_HOST"
-                echo "DB_NAME=$DB_NAME"
-                echo "DB_USER=$DB_USER"
-                echo "DB_PASS=$DB_PASS"
-                echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID"
-                echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY"
-                echo "S3_BUCKET_NAME=$S3_BUCKET_NAME"
+              run: python -c 'import os;print(os.environ)'
+              env:
+                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
             - name: Run Tests
               run: |
