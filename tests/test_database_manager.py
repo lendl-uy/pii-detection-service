@@ -9,6 +9,15 @@ def db_manager():
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
+
+    print(f"DB_HOST = {os.getenv('DB_HOST')}")
+    print(f"DB_USER = {os.getenv('DB_USER')}")
+    print(f"DB_PASS = {os.getenv('DB_PASS')}")
+    print(f"DB_NAME = {os.getenv('DB_NAME')}")
+    print(f"AWS_ACCESS_KEY_ID = {os.getenv('AWS_ACCESS_KEY_ID')}")
+    print(f"AWS_SECRET_ACCESS_KEY = {os.getenv('AWS_SECRET_ACCESS_KEY')}")
+    print(f"S3_BUCKET_NAME = {os.getenv('S3_BUCKET_NAME')}")
+    
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
     # Teardown: Clear the database
