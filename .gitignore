@@ -3,6 +3,7 @@ __pycache__
 .vscode
 .idea/*
 data_ingestion/db_sandbox.sql
+.pytest_cache
 
 # Ignore train.json to circumvent Git LFS issues
 model_training/datasets/train.json
