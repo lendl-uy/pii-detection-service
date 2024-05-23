@@ -4,11 +4,11 @@ from botocore.exceptions import NoCredentialsError
 
 class ObjectStoreManager:
     def __init__(
-            self,
-            name,
-            aws_access_key_id=None,
-            aws_secret_access_key=None,
-        )->None:
+        self,
+        name,
+        aws_access_key_id=None,
+        aws_secret_access_key=None,
+    ):
 
         self.name = name
         self.s3_client = boto3.client(

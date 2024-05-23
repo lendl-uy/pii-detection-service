@@ -29,4 +29,4 @@ jobs:
                 AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
               run: |
-                  pytest -s
+                  pytest
