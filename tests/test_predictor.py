@@ -23,10 +23,16 @@ def model():
     DB_NAME = os.getenv("DB_NAME")
     S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
+    print(f"DB_HOST: {DB_HOST}")
+    print(f"DB_USER: {DB_USER}")
+    print(f"DB_PASS: {DB_PASS}")
+    print(f"DB_NAME: {DB_NAME}")
+    print(f"S3_BUCKET_NAME: {S3_BUCKET_NAME}")
+
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    predictor = Predictor(S3_BUCKET_NAME)
+    predictor = Predictor(PRETRAINED_EN_NER)
     predictor.get_model(PRETRAINED_EN_NER, s3_manager)
 
     yield db_manager, predictor
