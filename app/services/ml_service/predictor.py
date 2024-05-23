@@ -25,6 +25,9 @@ class Predictor:
         key = f"{MODELS_DIRECTORY}/{model_name}.zip"
         if not os.path.exists(model_name):
             print("Model not found! Downloading from AWS S3")
+            #list all files in the bucket
+            response = object_store.s3_client.list_objects(Bucket=object_store.name)
+            print(f"Response:\n{response}")
             print(f"Downloading the model {model_name} from AWS S3: {key}")
             response = object_store.download(f"{MODELS_DIRECTORY}/{model_name}.zip", model_path)
             print(f"Response:\n{response}")
