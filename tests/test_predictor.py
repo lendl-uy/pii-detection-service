@@ -21,12 +21,12 @@ def model():
     DB_USER = os.getenv("DB_USER")
     DB_PASS = os.getenv("DB_PASS")
     DB_NAME = os.getenv("DB_NAME")
-    S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+    #S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    s3_manager = ObjectStoreManager(aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
 
     predictor = Predictor(PRETRAINED_EN_NER)
     predictor.get_model(PRETRAINED_EN_NER, s3_manager)
