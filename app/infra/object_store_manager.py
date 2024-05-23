@@ -6,12 +6,15 @@ from app.infra.constants import S3_BUCKET_NAME
 class ObjectStoreManager:
     def __init__(
         self,
-        BUCKET=S3_BUCKET_NAME,
+        bucket=S3_BUCKET_NAME,
         aws_access_key_id=None,
         aws_secret_access_key=None,
     ):
+        print(f"Bucket: {bucket}")
+        print(f"AWS_ACCESS_KEY_ID: {aws_access_key_id}")
+        print(f"AWS_SECRET_ACCESS_KEY: {aws_secret_access_key}")
 
-        self.name = BUCKET
+        self.name = bucket
         self.s3_client = boto3.client(
             's3',
             aws_access_key_id,
