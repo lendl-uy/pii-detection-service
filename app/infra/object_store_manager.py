@@ -12,7 +12,8 @@ class ObjectStoreManager:
 
         self.name = name
         self.s3_client = boto3.client(
-            "s3", 
+            "s3",
+            name,
             aws_access_key_id,
             aws_secret_access_key
         )
