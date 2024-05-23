@@ -6,15 +6,14 @@ from app.infra.constants import S3_BUCKET_NAME
 class ObjectStoreManager:
     def __init__(
         self,
-        name=S3_BUCKET_NAME,
+        BUCKET=S3_BUCKET_NAME,
         aws_access_key_id=None,
         aws_secret_access_key=None,
     ):
 
-        self.name = name
+        self.name = BUCKET
         self.s3_client = boto3.client(
-            "s3",
-            name,
+            's3',
             aws_access_key_id,
             aws_secret_access_key
         )
