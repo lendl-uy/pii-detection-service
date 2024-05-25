@@ -1,0 +1,10 @@
+spacy
+tqdm
+psycopg2-binary
+boto3
+scikit-learn
+pytest
+moto
+sqlalchemy
+Flask
+python-dotenv

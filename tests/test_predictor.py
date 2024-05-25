@@ -54,6 +54,12 @@ def test_predict_sample_document_from_test_set(model):
         # Reload the entry to ensure predictions are stored
         entry = db_manager.query_entries({"full_text": text}, 1)
 
+        # print fulltext, tokens, labels, and predictions
+        print(f"Full Text: {entry[0].full_text}")
+        print(f"Tokens: {entry[0].tokens}")
+        print(f"Labels: {entry[0].labels}")
+        print(f"Predictions: {predictor.predictions}")
+
         assert entry[0].labels == predictor.predictions, "Inserted labels do not match."
 
     finally:
