@@ -113,6 +113,7 @@ function submitLabelChanges() {
             success: function(response) {
                 console.log('Labels updated successfully:', response);
                 labelChanges = [];  // Clear the changes after successful update
+                window.location.href = '/predictions-view';  // Redirect to the predictions view page
             },
             error: function() {
                 alert('Failed to update labels');

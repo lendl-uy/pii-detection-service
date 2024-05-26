@@ -1,15 +1,20 @@
 $(document).ready(function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var accordionId = urlParams.get('accordionId');  // Get the accordion ID from URL parameter
+
     fetchDocuments();
 
     function fetchDocuments() {
         $.get('/documents', function(documents) {
             var content = '';
             documents.forEach(function(doc, index) {
+                // Assume the first document is the newest
+                var isNew = (index === 0) ? '<span class="badge bg-primary ms-2">New</span>' : '';
                 var highlightedText = integrateTokens(doc.full_text, doc.tokens, doc.labels);
                 content += `<div class="accordion-item">
                     <h2 class="accordion-header" id="heading${index}">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${index}" aria-expanded="false" aria-controls="collapse${index}">
-                            ${doc.truncated_text}
+                            ${doc.truncated_text}${isNew}
                         </button>
                     </h2>
                     <div id="collapse${index}" class="accordion-collapse collapse" aria-labelledby="heading${index}">
@@ -21,6 +26,14 @@ $(document).ready(function() {
                 </div>`;
             });
             $('#documentAccordion').html(content);
+
+            // Automatically open the accordion if accordionId is specified
+            if (accordionId) {
+                var targetAccordion = $('#collapse' + accordionId);
+                if (targetAccordion.length) {
+                    targetAccordion.collapse('show'); // Use Bootstrap's collapse method to show
+                }
+            }
         });
     }
 

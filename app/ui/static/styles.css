@@ -1,2 +1,48 @@
-.highlight { color: red; }
-.token { display: inline; }
+@media (max-width: 1000px) {  /* Adjust 600px to your specific threshold */
+    .text-center a img.img-fluid.img-fixed-below-threshold {
+        max-width: none;  /* Remove the max-width property */
+        width: 200px;     /* Set a fixed width */
+        height: auto;     /* Maintain aspect ratio */
+    }
+}
+@media (min-width: 1001px) {  /* Adjust 600px to your specific threshold */
+    .text-center a img.img-fluid.img-fixed-below-threshold {
+        width: 17%;     /* Set a fixed width */
+    }
+    #documentAccordion, #document-viewer {
+        max-width: 80%;
+    }
+}
+.mb-3 { /* Container class */
+    max-width: 95%; /* Restricts maximum width */
+    margin: 0 auto; /* Centers the container */
+    margin-top: 1.25%;
+}
+.form-control {
+    width: 100%;         /* Ensures the textarea takes full width of its container */
+    box-sizing: border-box; /* Ensures padding doesn't add to the total width */
+}
+.highlight {
+    color: red;
+}
+.token {
+    display: inline;
+}
+#documentAccordion, #document-viewer {
+    max-width: 95%;
+    margin: 0 auto; /* Centers the container */
+    margin-top: 1.25%; /* Specific to #documentAccordion */
+}
+#spinner {
+    margin-top: 1%; /* Specific to #documentAccordion */
+}
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 1rem);  /* Adjust the '1rem' if you have additional margins/paddings */
+}
+.modal-dialog {
+    margin: 0 auto;
+    float: none;  /* Ensures it doesn't float and uses flex alignment instead */
+}

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY, DateTime, Float, desc
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.sql import func
 
@@ -58,14 +58,26 @@ class DatabaseManager:
             session.commit()
             return updated_count
 
-    def query_entries(self, table, filter_dict=None, limit=None):
+    def query_entries(self, table, filter_dict=None, limit=None, order_by=None, descending=False):
         with self.Session() as session:
             query = session.query(table)
+
+            # Apply filters if any
             if filter_dict:
                 for key, value in filter_dict.items():
                     query = query.filter(getattr(table, key) == value)
+
+            # Apply ordering if specified
+            if order_by:
+                if descending:
+                    query = query.order_by(desc(getattr(table, order_by)))
+                else:
+                    query = query.order_by(getattr(table, order_by))
+
+            # Apply limit if specified
             if limit is not None:
                 query = query.limit(limit)
+
             return query.all()
 
     def clear_table(self, table):

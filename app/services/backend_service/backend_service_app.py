@@ -128,10 +128,8 @@ def retrieve_predictions():
 # Endpoint to get all documents
 @app.route('/documents')
 def get_documents():
-    documents = dbm.query_entries(DocumentEntry, {}, limit=10)
+    documents = dbm.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
     validation_preprocessor = ValidationPreprocessor()
-    for doc in documents:
-        logger.info(f"documents = {doc.validated_labels}")
     docs = [
         {'doc_id': doc.doc_id,
          'truncated_text': doc.full_text[:30]

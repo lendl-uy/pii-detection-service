@@ -12,7 +12,7 @@
 
     <div class="text-center">
         <a href="/">
-            <img src="{{url_for("static", filename="PII Finder.png")}}" alt="PII Finder" style="width:15%" class="img-fluid"/>
+            <img src="{{url_for('static', filename='PII Finder.png')}}" alt="PII Finder" class="img-fluid img-fixed-below-threshold"/>
         </a>
     </div>
 
@@ -31,7 +31,33 @@
     </div>
 
     <div class="d-grid gap-2 col-1 mx-auto">
-      <button class="btn btn-primary" id="submit-button" type="button" onclick="submitDocument()">Submit</button>
+        <button class="btn btn-primary" id="submit-button" type="button" data-bs-toggle="modal" data-bs-target="#confirmationModal">Submit</button>
+    </div>
+
+    <!-- Spinner (initially hidden) -->
+    <div class="text-center" id="spinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to detect PIIs in this document?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="detectPII()">Confirm</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
