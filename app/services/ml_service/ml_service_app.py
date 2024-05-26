@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # Instantiate connections to the database and the object store
 db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -46,7 +46,7 @@ def predict():
     if not entry:
         return jsonify({"status": "FAILED", "message": "Document not found."}), 404
     full_text = entry[0].full_text
-
+    logger.info(f"full_text = {full_text}")
     # Instantiate the predictor
     logger.info("Pulling the latest model")
     predictor = Predictor(PRETRAINED_EN_NER)
@@ -60,6 +60,9 @@ def predict():
     logger.info("Predicting PIIs from the given full text")
     start_time = time.time()
     predictor.predict(full_text, PRETRAINED_EN_NER)
+    logger.info(f"predictions = {predictor.predictions}")
+    logger.info(f"len(predictions) = {len(predictor.predictions)}")
+
     logger.info("Done predicting PIIs")
     runtime = time.time() - start_time
 
@@ -67,7 +70,8 @@ def predict():
     if entry:
         db_manager.update_entry(DocumentEntry,
                                 {"doc_id": entry[0].doc_id},
-                                {"labels": predictor.predictions})
+                                {"labels": predictor.predictions,
+                                           "tokens": predictor.tokens})
         updated_entry = db_manager.query_entries(DocumentEntry,
                                                  {"doc_id": entry[0].doc_id},
                                                  1)[0]
@@ -77,8 +81,9 @@ def predict():
             "document_id": updated_entry.doc_id,
             "runtime": f"{runtime:.2f} s"
         }
+        model_entry = ModelEntry(doc_id=entry[0].doc_id, model_name=PRETRAINED_EN_NER, runtime=runtime)
+        prediction_id = db_manager.add_entry(model_entry)
 
-        # return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
         response = requests.post("http://127.0.0.1:5001/retrieve-predictions", json=predictor_response, headers=headers)
