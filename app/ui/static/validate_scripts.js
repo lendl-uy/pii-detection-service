@@ -56,6 +56,7 @@ function toggleDropdown(span, index) {
         dropdown = createDropdown(labelOptions, index);
         span.appendChild(dropdown);
         span.classList.add('active-token');
+        dropdown.style.display = 'block'; // Ensure dropdown is shown immediately
     } else {
         dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
     }
@@ -68,19 +69,31 @@ function createDropdown(options, index) {
     options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
+        // Set the className for highlighting the token
         let className = cssClassNameFromLabel(index);
+        if (className) { // Only add if className is not empty
+            button.classList.add(className);
+        }
+        // Check if the current option is the active label
         if (option === data.labels[index]) {
-            if (className) { // Only add if className is not empty
-                button.classList.add(className);
-            }
+            button.classList.add('active-label');  // Highlight the active label
         }
         button.onclick = function() {
             setLabel(index, option);
             dropdown.style.display = 'none';
+            updateDropdownHighlight(dropdown, button); // Update highlight after setting label
         };
         dropdown.appendChild(button);
     });
     return dropdown;
+}
+
+// Additional function to update highlight
+function updateDropdownHighlight(dropdown, activeButton) {
+    Array.from(dropdown.children).forEach(button => {
+        button.classList.remove('active-label');
+    });
+    activeButton.classList.add('active-label');
 }
 
 function setLabel(index, label) {
