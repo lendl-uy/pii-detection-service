@@ -69,15 +69,16 @@ function createDropdown(options, index) {
     options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
-        // Set the className for highlighting the token
-        let className = cssClassNameFromLabel(index);
-        if (className) { // Only add if className is not empty
-            button.classList.add(className);
-        }
-        // Check if the current option is the active label
+
+        // Apply 'active-label' class only if the option is the current label of the token
         if (option === data.labels[index]) {
             button.classList.add('active-label');  // Highlight the active label
+            let className = cssClassNameFromLabel(index);
+            if (className) { // Add highlight class only to the active label if it is a PII
+                button.classList.add(className);
+            }
         }
+
         button.onclick = function() {
             setLabel(index, option);
             dropdown.style.display = 'none';
@@ -91,9 +92,13 @@ function createDropdown(options, index) {
 // Additional function to update highlight
 function updateDropdownHighlight(dropdown, activeButton) {
     Array.from(dropdown.children).forEach(button => {
-        button.classList.remove('active-label');
+        button.classList.remove('active-label', 'highlight'); // Remove both classes
     });
     activeButton.classList.add('active-label');
+    let className = cssClassNameFromLabel(activeButton.index);
+    if (className) {
+        activeButton.classList.add(className); // Add highlight class if needed
+    }
 }
 
 function setLabel(index, label) {
