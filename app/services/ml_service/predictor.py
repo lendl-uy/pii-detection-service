@@ -11,6 +11,7 @@ class Predictor:
         self.model_name = model_name
         self.document = None
         self.predictions = None
+        self.tokens = None
 
     def extract_zip(self, zip_path, extract_to=None):
         if extract_to is None:
@@ -44,6 +45,12 @@ class Predictor:
         self.document = document
         doc = nlp(document)
         self.predictions = [(token.ent_type_ if token.ent_type_.startswith(('B-', 'I-')) else "O") for token in doc]
+
+        tokens = []
+
+        for token, label in zip(doc, self.predictions):
+            tokens.append(str(token))
+        self.tokens = tokens
 
     def save_predictions_to_database(self, db_manager):
         entry = db_manager.query_entries(DocumentEntry, {"full_text": self.document}, limit=1)[0]

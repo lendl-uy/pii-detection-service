@@ -27,7 +27,7 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-dbm = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
 
 @app.route("/")
 def index():
@@ -53,12 +53,12 @@ def save_essay():
             # Preprocess the essay inputted by the user
             logger.info("Pre-processing the input essay")
             preprocessor = Preprocessor()
-            tokens = preprocessor.tokenize(essay)
+            cleaned_full_text = preprocessor.decode_escapes(essay)
 
             # Create and insert a new data entry to the database
-            logger.info("Ingesting the essay and tokens to the database")
-            entry = DocumentEntry(full_text=essay, tokens=tokens)
-            doc_id = dbm.add_entry(entry)
+            logger.info("Ingesting the essay to the database")
+            document_entry = DocumentEntry(full_text=cleaned_full_text)
+            doc_id = db_manager.add_entry(document_entry)
 
             response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
             return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
@@ -86,14 +86,13 @@ def retrieve_predictions():
             logger.info(f"Received response for doc_id = {doc_id}")
             logger.info(f"Prediction runtime: {runtime}")
 
-            entry = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+            entry = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
             tokens = entry[0].tokens
             predictions = entry[0].labels
             logger.info(f"tokens: {tokens}")
             logger.info(f"predictions: {predictions}")
 
             if predictions:
-                # return redirect(url_for("predictions_view"))
                 return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
             else:
                 return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
@@ -109,7 +108,7 @@ def retrieve_predictions():
             return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
 
         try:
-            entry = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+            entry = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
             if entry:
                 tokens = entry[0].tokens
                 predictions = entry[0].labels
@@ -128,7 +127,7 @@ def retrieve_predictions():
 # Endpoint to get all documents
 @app.route('/documents')
 def get_documents():
-    documents = dbm.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
+    documents = db_manager.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
     validation_preprocessor = ValidationPreprocessor()
     for doc in documents:
         if doc.labels is None:
@@ -148,7 +147,7 @@ def get_documents():
 # Endpoint to get a specific document
 @app.route('/document/<int:doc_id>')
 def get_document(doc_id):
-    document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+    document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
     doc = {
         'doc_id': document.doc_id,
         'full_text': document.full_text,
@@ -158,37 +157,37 @@ def get_document(doc_id):
     return jsonify(doc)
 
 # Endpoint to update a label
-@app.route('/update-labels', methods=['POST'])
+@app.route("/update-labels", methods=["POST"])
 def update_labels():
     updates = request.get_json()
     response_messages = []
     logger.info(f"updates = {updates}")
 
     doc_id = updates[0]['docId']
-    document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+    document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
     validated_labels = document.labels
 
     for update in updates:
         doc_id = update['docId']
         token_index = update['tokenIndex']
         new_label = update['newLabel']
-        document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+        document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
         logger.info(f"token_index = {token_index}, label = {document.labels}, new_label = {new_label}")
         if document:
             previous_label = validated_labels[token_index-1]
             prefix = "B-" if previous_label == "O" else "I-"
             validated_labels[token_index] = prefix + new_label
         else:
-            response_messages.append({'message': f'Document with ID {doc_id} not found', 'status': 'error'})
+            response_messages.append({"message": f'Document with ID {doc_id} not found', 'status': 'error'})
 
-    dbm.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": validated_labels})
+    db_manager.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": validated_labels})
 
     return jsonify(response_messages), 200
 
 # Endpoint to render the validation page
-@app.route('/validate/<int:doc_id>')
+@app.route("/validate/<int:doc_id>")
 def validate(doc_id):
-    return render_template('validate.html')
+    return render_template("validate.html")
 
 
 if __name__ == '__main__':
