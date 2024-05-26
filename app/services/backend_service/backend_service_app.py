@@ -130,6 +130,10 @@ def retrieve_predictions():
 def get_documents():
     documents = dbm.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
     validation_preprocessor = ValidationPreprocessor()
+    for doc in documents:
+        if doc.labels is None:
+            logger.warning(f"Document {doc.doc_id} has no labels!")
+            documents.remove(doc)
     docs = [
         {'doc_id': doc.doc_id,
          'truncated_text': doc.full_text[:30]
