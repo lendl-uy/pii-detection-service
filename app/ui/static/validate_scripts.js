@@ -120,3 +120,13 @@ function submitLabelChanges() {
         });
     }
 }
+
+window.onclick = function(event) {
+    if (!event.target.matches('.token, .dropdown, .dropdown *')) {
+        if (activeDropdown) {
+            activeDropdown.style.display = 'none';
+            activeDropdown.parentNode.classList.remove('active-token');
+            activeDropdown = null;
+        }
+    }
+};
