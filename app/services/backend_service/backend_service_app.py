@@ -5,7 +5,6 @@ import requests
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 from dotenv import load_dotenv
 
-from app.services.backend_service.libs.utils import PostgresDB
 from preprocessor import Preprocessor
 from validation_preprocessor import ValidationPreprocessor
 from app.infra.database_manager import DatabaseManager, DocumentEntry
