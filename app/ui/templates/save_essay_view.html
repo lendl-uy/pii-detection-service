@@ -36,34 +36,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script>
-        function goToSubmitEssay() {
-            window.location.href = "/save-essay-view";
-        }
-
-        function goToPredictionsView() {
-            window.location.href = "/predictions-view";
-        }
-
-        function submitDocument() {
-            var essayText = document.getElementById("essay-textbox").value;
-            fetch("/save-essay", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ essay: essayText })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Success:", data);
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-                alert("Failed to detect PII.");
-            });
-        }
-    </script>
+    <script src="{{ url_for("static", filename="save_essay_view_scripts.js") }}"></script>
 
 </body>
 </html>

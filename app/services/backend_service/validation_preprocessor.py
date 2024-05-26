@@ -12,6 +12,3 @@ class ValidationPreprocessor:
             else:
                 new_sublist.append(item)
         return new_sublist
-
-    def handle_new_labels(self):
-        pass

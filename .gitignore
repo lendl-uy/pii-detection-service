@@ -20,5 +20,5 @@ staging
 *venv*
 
 # Ignore pulled model
-app/services/ml_service/pii_ner_pretrained_sm_spacy/*
-tests/pii_ner_pretrained_sm_spacy/*
+app/services/ml_service/pii_ner_pretrained_sm_spacy
+tests/pii_ner_pretrained_sm_spacy
