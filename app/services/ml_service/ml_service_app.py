@@ -5,7 +5,7 @@ import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
-from app.infra.database_manager import DatabaseManager, DocumentEntry
+from app.infra.database_manager import DatabaseManager, DocumentEntry, ModelEntry
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
 from app.services.ml_service.model_retrainer import ModelRetrainer
@@ -20,11 +20,17 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 # Instantiate Flask application
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Instantiate connections to the database and the object store
+db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -34,13 +40,9 @@ def predict():
     if not doc_id:
         return jsonify({"status": "FAILED", "message": "No document ID provided."}), 400
 
-    # Instantiate connections to the database and the object store
-    db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
-
     # Retrieve the document to be predicted with ID specified by the preprocessor endpoint
     logger.info("Retrieving the document")
-    entry = db_manager.query_entries({"doc_id": doc_id}, limit=1)
+    entry = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
     if not entry:
         return jsonify({"status": "FAILED", "message": "Document not found."}), 404
     full_text = entry[0].full_text
@@ -63,8 +65,12 @@ def predict():
 
     # Update the database with predictions
     if entry:
-        db_manager.update_entry({"doc_id": entry[0].doc_id}, {"labels": predictor.predictions})
-        updated_entry = db_manager.query_entries({"doc_id": entry[0].doc_id}, 1)[0]
+        db_manager.update_entry(DocumentEntry,
+                                {"doc_id": entry[0].doc_id},
+                                {"labels": predictor.predictions})
+        updated_entry = db_manager.query_entries(DocumentEntry,
+                                                 {"doc_id": entry[0].doc_id},
+                                                 1)[0]
 
         # Construct the data to send to the backend
         predictor_response = {
@@ -72,9 +78,10 @@ def predict():
             "runtime": f"{runtime:.2f} s"
         }
 
+        # return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
-        response = requests.post("http://127.0.0.1:5000/ml-response-handler", json=predictor_response, headers=headers)
+        response = requests.post("http://127.0.0.1:5001/retrieve-predictions", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
@@ -88,12 +95,12 @@ def predict():
 @app.route("/retrain", methods=["POST"])
 def retrain():
     logger.info("Initiating model re-training process.")
-    db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     try:
         # Retrieve data flagged for re-training
-        entries = db_manager.query_entries({"for_retrain": True}, limit=ROW_COUNT_THRESHOLD_FOR_RETRAINING)
+        entries = db_manager.query_entries(DocumentEntry,
+                                           {"for_retrain": True},
+                                           limit=ROW_COUNT_THRESHOLD_FOR_RETRAINING)
         if len(entries) < 3:  # Ensure there is enough data to retrain
             logger.warning("Insufficient data for re-training.")
             return {"status": "Failed", "message": "Insufficient dataset size for re-training"}, 200
@@ -122,7 +129,9 @@ def retrain():
         logger.info(f"Model F5-Score: {f5_score}")
 
         # Reset the re-training flag
-        db_manager.update_entry({"for_retrain": True}, {"for_retrain": False})
+        db_manager.update_entry(DocumentEntry,
+                                {"for_retrain": True},
+                                {"for_retrain": False})
 
         return {"status": "Success", "runtime": f"{runtime:.2f} s", "evaluation": f5_score}, 200
 
@@ -131,4 +140,4 @@ def retrain():
         return {"status": "Failed", "message": str(e)}, 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5002)

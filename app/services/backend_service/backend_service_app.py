@@ -2,11 +2,11 @@ import os
 import psycopg2
 import logging
 import requests
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from dotenv import load_dotenv
 
-from app.services.backend_service.libs.utils import PostgresDB
 from preprocessor import Preprocessor
+from validation_preprocessor import ValidationPreprocessor
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 
 # For local testing only
@@ -31,13 +31,21 @@ dbm = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("home.html")
+
+@app.route("/save-essay-view")
+def save_essay_view():
+    return render_template("save_essay_view.html")
+
+@app.route("/predictions-view")
+def predictions_view():
+    return render_template("predictions_view.html")
 
 @app.route("/save-essay", methods=["POST"])
 def save_essay():
     # Get the essay data from the request
     data = request.json
-    essay = data.get("essay")
+    essay = data["essay"]
     logger.info(f"Essay = {essay}")
 
     if essay:
@@ -52,98 +60,136 @@ def save_essay():
             entry = DocumentEntry(full_text=essay, tokens=tokens)
             doc_id = dbm.add_entry(entry)
 
-            # Asynchronously call predict endpoint
-            response = requests.post("http://127.0.0.1:5001/predict", json={"doc_id": doc_id})
+            response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
             return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
         except psycopg2.Error as e:
             return {"message": "Error saving essay to database: {}".format(e)}, 500
     else:
         return {"message": "No essay data provided"}, 400
 
-@app.route("/ml-response-handler", methods=["POST"])
-def handle_ml_service_response():
-    # Attempt to parse the JSON data from the request
-    try:
-        data = request.get_json()
-        doc_id = data.get("document_id")
-        runtime = data.get("runtime")
+@app.route("/retrieve-predictions", methods=["GET", "POST"])
+def retrieve_predictions():
 
+    if request.method == "POST":
+        # Attempt to parse the JSON data from the request
+        try:
+            data = request.get_json()
+            doc_id = data.get("document_id")
+            runtime = data.get("runtime")
+
+            if not doc_id:
+                # Missing document ID or predictions in the incoming data
+                logger.error("Missing document ID in the request")
+                return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
+
+            # Log the received data
+            logger.info(f"Received response for doc_id = {doc_id}")
+            logger.info(f"Prediction runtime: {runtime}")
+
+            entry = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+            tokens = entry[0].tokens
+            predictions = entry[0].labels
+            logger.info(f"tokens: {tokens}")
+            logger.info(f"predictions: {predictions}")
+
+            if predictions:
+                # return redirect(url_for("predictions_view"))
+                return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+            else:
+                return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
+        except Exception as e:
+            logger.error(f"Error processing Predictor response: {str(e)}")
+            return jsonify({"status": "FAILED", "message": "Error processing the Predictor response"}), 500
+
+    elif request.method == "GET":
+        # Logic to handle GET request to fetch and display predictions
+        doc_id = request.args.get('doc_id')
         if not doc_id:
-            # Missing document ID or predictions in the incoming data
-            logger.error("Missing document ID in the request")
+            logger.error("Missing document ID in query")
             return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
 
-        # Log the received data
-        logger.info(f"Received response for doc_id = {doc_id}")
-        logger.info(f"Prediction runtime: {runtime}")
-
-        # Here, you would typically update the database entry for the document with new data
-        # Assuming you have a function update_document_entry that handles database updates
-        return jsonify({"status": "SUCCESS", "message": "Document updated with predictions successfully"}), 200
-
-    except Exception as e:
-        logger.error(f"Error processing Predictor response: {str(e)}")
-        return jsonify({"status": "FAILED", "message": "Error processing the Predictor response"}), 500
-
-# Get all documents or create a new document
-@app.route("/documents", methods=["GET", "POST"])
-def handle_documents():
-    if request.method == "GET":
-        entries = dbm.query_entries(limit=10)
-        documents = [{'doc_id': doc.doc_id, 'full_text': doc.full_text} for doc in entries]  # Assuming each entry has a 'name'
-        logger.info(f"Documents: {documents}")
-        return jsonify(documents)
-    elif request.method == "POST":
-        data = request.json
-        if not data or 'name' not in data:
-            return jsonify({'error': 'Missing required data'}), 400
         try:
-            new_document = DocumentEntry(name=data['name'])
-            dbm.add_entry(new_document)
-            return jsonify({'id': new_document.doc_id, 'name': new_document.name}), 201
+            entry = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+            if entry:
+                tokens = entry[0].tokens
+                predictions = entry[0].labels
+                logger.info(f"tokens: {tokens}")
+                logger.info(f"predictions: {predictions}")
+
+                return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+            else:
+                logger.error("Document not found")
+                return jsonify({"status": "FAILED", "message": "Document not found"}), 404
         except Exception as e:
-            logger.error(f"Failed to create document: {e}")
-            return jsonify({'error': 'Failed to create document'}), 500
-
-        # or update document with user validated token
-
-# add security feature only allowing ML_service to call this endpoint
-@app.route("/labels/<int:document_id>", methods=["POST"])
-def save_labels(document_id):
-    data = request.json
-    labels = data.get("labels")
-
-    entry = DocumentEntry(labels=labels)
-    dbm.add_entry(entry)
-
-    return jsonify({"message": "Labels saved"}), 200
+            logger.error(f"Error retrieving predictions: {str(e)}")
+            return jsonify({"status": "FAILED", "message": "Error retrieving predictions"}), 500
 
 
-# Get individual document by ID
-@app.route("/documents/<int:document_id>", methods=["GET", "PATCH"])
-def get_document(document_id):
-    if request.method == "PATCH":
-        # Get the new label from the request
-        print("patch request received")
-        data = request.json
-        print(data)
-        validated_labels = data.get('labels')
-        postgres_client = PostgresDB()
+# Endpoint to get all documents
+@app.route('/documents')
+def get_documents():
+    documents = dbm.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
+    validation_preprocessor = ValidationPreprocessor()
+    for doc in documents:
+        if doc.labels is None:
+            logger.warning(f"Document {doc.doc_id} has no labels!")
+            documents.remove(doc)
+    docs = [
+        {'doc_id': doc.doc_id,
+         'truncated_text': doc.full_text[:30]
+                           + "..." if len(doc.full_text) > 27 else doc.full_text[:30],
+         'full_text': doc.full_text,
+         'tokens': doc.tokens,
+         'labels': validation_preprocessor.remove_prefixes(doc.labels) if doc.validated_labels is None else doc.validated_labels}
+        for doc in documents
+    ]
+    return jsonify(docs)
 
-        postgres_client.connect()
-        postgres_client.validate(document_id, validated_labels)
+# Endpoint to get a specific document
+@app.route('/document/<int:doc_id>')
+def get_document(doc_id):
+    document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+    doc = {
+        'doc_id': document.doc_id,
+        'full_text': document.full_text,
+        'tokens': document.tokens,
+        'labels': document.labels if document.validated_labels is None else document.validated_labels
+    }
+    return jsonify(doc)
 
-        return jsonify({"message": "Document validated"}), 200
+# Endpoint to update a label
+@app.route('/update-labels', methods=['POST'])
+def update_labels():
+    updates = request.get_json()
+    response_messages = []
+    logger.info(f"updates = {updates}")
 
-    # default to get
-    entry = dbm.query_entries({"doc_id": document_id}, limit=1)
-    document = entry[0].full_text
+    doc_id = updates[0]['docId']
+    document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+    validated_labels = document.labels
 
-    if document:
-        return jsonify(document)
-    else:
-        return jsonify({"error": "Document not found"}), 404
+    for update in updates:
+        doc_id = update['docId']
+        token_index = update['tokenIndex']
+        new_label = update['newLabel']
+        document = dbm.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
+        logger.info(f"token_index = {token_index}, label = {document.labels}, new_label = {new_label}")
+        if document:
+            previous_label = validated_labels[token_index-1]
+            prefix = "B-" if previous_label == "O" else "I-"
+            validated_labels[token_index] = prefix + new_label
+        else:
+            response_messages.append({'message': f'Document with ID {doc_id} not found', 'status': 'error'})
+
+    dbm.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": validated_labels})
+
+    return jsonify(response_messages), 200
+
+# Endpoint to render the validation page
+@app.route('/validate/<int:doc_id>')
+def validate(doc_id):
+    return render_template('validate.html')
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
