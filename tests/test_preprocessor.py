@@ -15,10 +15,9 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-SAMPLE_ESSAY_NO_LABELS = os.getenv("SAMPLE_ESSAY_NO_LABELS")
-SAMPLE_ESSAY_WITH_LABELS = os.getenv("SAMPLE_ESSAY_WITH_LABELS")
+
+SAMPLE_ESSAY_NO_LABELS = "sample_input.json"
+SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 
 @pytest.fixture(scope="function")
 def db_manager():
@@ -34,6 +33,10 @@ def test_ingest_full_text_and_tokens_to_database(db_manager):
     # Ensure the sample essay file is available
     sample_file_path = f"datasets/{SAMPLE_ESSAY_NO_LABELS}"
     if not os.path.exists(sample_file_path):
+        print(
+            f"Downloading sample essay file. s3://{S3_BUCKET_NAME}/{sample_file_path}"
+            f" to {SAMPLE_ESSAY_NO_LABELS}"
+        )
         object_store_manager.download(sample_file_path, SAMPLE_ESSAY_NO_LABELS)
 
     assert os.path.exists(SAMPLE_ESSAY_NO_LABELS), "Sample essay file not downloaded correctly."

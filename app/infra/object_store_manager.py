@@ -1,11 +1,10 @@
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-
 class ObjectStoreManager:
-    def __init__(self, name, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY):
+    def __init__(self, name):
         self.name = name
-        self.s3_client = boto3.client("s3", aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        self.s3_client = boto3.client("s3")
 
     def download(self, object_name, file_name):
         try:
