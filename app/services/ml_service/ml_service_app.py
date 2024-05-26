@@ -28,6 +28,10 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Instantiate connections to the database and the object store
+db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.json
@@ -35,10 +39,6 @@ def predict():
 
     if not doc_id:
         return jsonify({"status": "FAILED", "message": "No document ID provided."}), 400
-
-    # Instantiate connections to the database and the object store
-    db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
     # Retrieve the document to be predicted with ID specified by the preprocessor endpoint
     logger.info("Retrieving the document")
@@ -78,9 +78,10 @@ def predict():
             "runtime": f"{runtime:.2f} s"
         }
 
+        # return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
-        response = requests.post("http://127.0.0.1:5001/ml-response-handler", json=predictor_response, headers=headers)
+        response = requests.post("http://127.0.0.1:5001/retrieve-predictions", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
@@ -94,8 +95,6 @@ def predict():
 @app.route("/retrain", methods=["POST"])
 def retrain():
     logger.info("Initiating model re-training process.")
-    db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
     try:
         # Retrieve data flagged for re-training

@@ -58,7 +58,6 @@ Key contributors to this repository are the following:
 * infra
 * cicd
 
-<<<<<<< HEAD
 ## CICD Workflows
 * Infra Setup: make sure infra setup is still intact
 * Backend Services
@@ -66,7 +65,6 @@ Key contributors to this repository are the following:
 
 Action Items:
 - modify boto3 s3 client creation by utilizing AWS ACCESS KEY & SECRET KEY
-=======
+
 ## CICD Components
 * Pylint
->>>>>>> b467d43fc83317f73a9f108191f3793eb60b7722
