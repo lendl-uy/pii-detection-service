@@ -69,7 +69,7 @@ function createDropdown(options, index) {
     options.forEach(option => {
         const button = document.createElement('button');
         button.textContent = option;
-
+        console.log(option + ': ' + data.labels[index]);
         // Apply 'active-label' class only if the option is the current label of the token
         if (option === data.labels[index]) {
             button.classList.add('active-label');  // Highlight the active label
@@ -82,7 +82,7 @@ function createDropdown(options, index) {
         button.onclick = function() {
             setLabel(index, option);
             dropdown.style.display = 'none';
-            updateDropdownHighlight(dropdown, button); // Update highlight after setting label
+            updateDropdownHighlight(dropdown, button, index); // Pass index here
         };
         dropdown.appendChild(button);
     });
@@ -90,12 +90,12 @@ function createDropdown(options, index) {
 }
 
 // Additional function to update highlight
-function updateDropdownHighlight(dropdown, activeButton) {
+function updateDropdownHighlight(dropdown, activeButton, index) {
     Array.from(dropdown.children).forEach(button => {
         button.classList.remove('active-label', 'highlight'); // Remove both classes
     });
     activeButton.classList.add('active-label');
-    let className = cssClassNameFromLabel(activeButton.index);
+    let className = cssClassNameFromLabel(index);
     if (className) {
         activeButton.classList.add(className); // Add highlight class if needed
     }
