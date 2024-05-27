@@ -2,32 +2,34 @@ import os
 import psycopg2
 import logging
 import requests
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
-
 from preprocessor import Preprocessor
 from validation_preprocessor import ValidationPreprocessor
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 
-# For local testing only
 # Load environment variables from .env file
 load_dotenv()
 
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_HOST = os.getenv("DB_HOST")
+# Database configuration
+DB_CONFIG = {
+    "db_host": os.getenv("DB_HOST"),
+    "db_user": os.getenv("DB_USER"),
+    "db_pass": os.getenv("DB_PASS"),
+    "db_name": os.getenv("DB_NAME")
+}
 
+# Flask app setup
 template_dir = os.path.abspath("../../ui/templates")
 static_dir = os.path.abspath("../../ui/static")
-
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
-# Set up logging to be info as default
+# Logger setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+# Database manager initialization
+db_manager = DatabaseManager(**DB_CONFIG)
 
 @app.route("/")
 def index():
@@ -41,153 +43,233 @@ def save_essay_view():
 def predictions_view():
     return render_template("predictions_view.html")
 
-@app.route("/save-essay", methods=["POST"])
-def save_essay():
-    # Get the essay data from the request
-    data = request.json
-    essay = data["essay"]
-    logger.info(f"Essay = {essay}")
-
-    if essay:
-        try:
-            # Preprocess the essay inputted by the user
-            logger.info("Pre-processing the input essay")
-            preprocessor = Preprocessor()
-            cleaned_full_text = preprocessor.decode_escapes(essay)
-
-            # Create and insert a new data entry to the database
-            logger.info("Ingesting the essay to the database")
-            document_entry = DocumentEntry(full_text=cleaned_full_text)
-            doc_id = db_manager.add_entry(document_entry)
-
-            response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
-            return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
-        except psycopg2.Error as e:
-            return {"message": "Error saving essay to database: {}".format(e)}, 500
-    else:
-        return {"message": "No essay data provided"}, 400
-
-@app.route("/retrieve-predictions", methods=["GET", "POST"])
-def retrieve_predictions():
-
-    if request.method == "POST":
-        # Attempt to parse the JSON data from the request
-        try:
-            data = request.get_json()
-            doc_id = data.get("document_id")
-            runtime = data.get("runtime")
-
-            if not doc_id:
-                # Missing document ID or predictions in the incoming data
-                logger.error("Missing document ID in the request")
-                return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
-
-            # Log the received data
-            logger.info(f"Received response for doc_id = {doc_id}")
-            logger.info(f"Prediction runtime: {runtime}")
-
-            entry = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
-            tokens = entry[0].tokens
-            predictions = entry[0].labels
-            logger.info(f"tokens: {tokens}")
-            logger.info(f"predictions: {predictions}")
-
-            if predictions:
-                return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
-            else:
-                return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
-        except Exception as e:
-            logger.error(f"Error processing Predictor response: {str(e)}")
-            return jsonify({"status": "FAILED", "message": "Error processing the Predictor response"}), 500
-
-    elif request.method == "GET":
-        # Logic to handle GET request to fetch and display predictions
-        doc_id = request.args.get('doc_id')
-        if not doc_id:
-            logger.error("Missing document ID in query")
-            return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
-
-        try:
-            entry = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
-            if entry:
-                tokens = entry[0].tokens
-                predictions = entry[0].labels
-                logger.info(f"tokens: {tokens}")
-                logger.info(f"predictions: {predictions}")
-
-                return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
-            else:
-                logger.error("Document not found")
-                return jsonify({"status": "FAILED", "message": "Document not found"}), 404
-        except Exception as e:
-            logger.error(f"Error retrieving predictions: {str(e)}")
-            return jsonify({"status": "FAILED", "message": "Error retrieving predictions"}), 500
-
-
-# Endpoint to get all documents
-@app.route('/documents')
-def get_documents():
-    documents = db_manager.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
-    validation_preprocessor = ValidationPreprocessor()
-    for doc in documents:
-        if doc.labels is None:
-            logger.warning(f"Document {doc.doc_id} has no labels!")
-            documents.remove(doc)
-    docs = [
-        {'doc_id': doc.doc_id,
-         'truncated_text': doc.full_text[:30]
-                           + "..." if len(doc.full_text) > 27 else doc.full_text[:30],
-         'full_text': doc.full_text,
-         'tokens': doc.tokens,
-         'labels': validation_preprocessor.remove_prefixes(doc.labels) if doc.validated_labels is None else doc.validated_labels}
-        for doc in documents
-    ]
-    return jsonify(docs)
-
-# Endpoint to get a specific document
-@app.route('/document/<int:doc_id>')
-def get_document(doc_id):
-    document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
-    doc = {
-        'doc_id': document.doc_id,
-        'full_text': document.full_text,
-        'tokens': document.tokens,
-        'labels': document.labels if document.validated_labels is None else document.validated_labels
-    }
-    return jsonify(doc)
-
-# Endpoint to update a label
-@app.route("/update-labels", methods=["POST"])
-def update_labels():
-    updates = request.get_json()
-    response_messages = []
-    logger.info(f"updates = {updates}")
-
-    doc_id = updates[0]['docId']
-    document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
-    validated_labels = document.labels
-
-    for update in updates:
-        doc_id = update['docId']
-        token_index = update['tokenIndex']
-        new_label = update['newLabel']
-        document = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)[0]
-        logger.info(f"token_index = {token_index}, label = {document.labels}, new_label = {new_label}")
-        if document:
-            previous_label = validated_labels[token_index-1]
-            prefix = "B-" if previous_label == "O" else "I-"
-            validated_labels[token_index] = prefix + new_label
-        else:
-            response_messages.append({"message": f'Document with ID {doc_id} not found', 'status': 'error'})
-
-    db_manager.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": validated_labels})
-
-    return jsonify(response_messages), 200
-
 # Endpoint to render the validation page
 @app.route("/validate/<int:doc_id>")
 def validate(doc_id):
     return render_template("validate.html")
+
+@app.route("/save-essay", methods=["POST"])
+def save_essay():
+    data = request.get_json()
+    essay = data.get("essay")
+
+    if not essay:
+        return jsonify({"message": "No essay data provided"}), 400
+
+    try:
+        cleaned_essay = Preprocessor().decode_escapes(essay)
+        document_entry = DocumentEntry(full_text=cleaned_essay)
+        doc_id = db_manager.add_entry(document_entry)
+
+        response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
+        return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
+    except psycopg2.Error as e:
+        logger.error(f"Database error: {e}")
+        return jsonify({"message": f"Database error: {e}"}), 500
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return jsonify({"message": f"Unexpected error: {e}"}), 500
+
+@app.route("/retrieve-predictions", methods=["GET", "POST"])
+def retrieve_predictions():
+    if request.method == "POST":
+        return handle_post_predictions()
+    else:
+        return handle_get_predictions()
+
+def handle_post_predictions():
+    data = request.get_json()
+    doc_id = data.get("document_id")
+    runtime = data.get("runtime")
+
+    if not doc_id:
+        logger.error("Missing document ID in POST request")
+        return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
+
+    try:
+        entry = fetch_document_entry(doc_id)
+        if not entry:
+            logger.error("Document not found")
+            return jsonify({"status": "FAILED", "message": "Document not found"}), 404
+
+        tokens, predictions = entry.tokens, entry.labels
+        logger.info(f"Received POST response for doc_id = {doc_id}, runtime = {runtime}")
+        logger.info(f"Tokens: {tokens}, Predictions: {predictions}")
+
+        if predictions:
+            return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+        else:
+            return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
+    except Exception as e:
+        logger.error(f"Error processing POST predictor response: {str(e)}")
+        return jsonify({"status": "FAILED", "message": f"Error: {str(e)}"}), 500
+
+def handle_get_predictions():
+    doc_id = request.args.get('doc_id')
+    if not doc_id:
+        logger.error("Missing document ID in GET query")
+        return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
+
+    try:
+        entry = fetch_document_entry(doc_id)
+        if not entry:
+            logger.error("Document not found")
+            return jsonify({"status": "FAILED", "message": "Document not found"}), 404
+
+        tokens, predictions = entry.tokens, entry.labels
+        logger.info(f"Retrieved GET predictions for doc_id = {doc_id}")
+        logger.info(f"Tokens: {tokens}, Predictions: {predictions}")
+
+        return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+    except Exception as e:
+        logger.error(f"Error retrieving GET predictions: {str(e)}")
+        return jsonify({"status": "FAILED", "message": f"Error: {str(e)}"}), 500
+
+def fetch_document_entry(doc_id):
+    """Fetch a single document entry from the database."""
+    entries = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+    return entries[0] if entries else None
+
+# Endpoint to get all documents
+@app.route('/documents')
+def get_documents():
+    try:
+        documents = fetch_documents_with_labels()
+        return jsonify([format_document(doc) for doc in documents]), 200
+    except Exception as e:
+        logger.error(f"Failed to retrieve documents: {e}")
+        return jsonify({"error": "Failed to retrieve documents"}), 500
+
+def fetch_documents_with_labels():
+    """Fetches documents from the database with labels, discarding those without labels."""
+    documents = db_manager.query_entries(DocumentEntry, {}, limit=10, order_by="updated_at", descending=True)
+    return [doc for doc in documents if doc.labels is not None]
+
+def format_document(doc):
+    """Formats the document's data for JSON response."""
+    truncated_text = truncate_text(doc.full_text)
+    labels = preprocess_labels(doc)
+    return {
+        'doc_id': doc.doc_id,
+        'truncated_text': truncated_text,
+        'full_text': doc.full_text,
+        'tokens': doc.tokens,
+        'labels': labels
+    }
+
+def truncate_text(text):
+    """Truncates text to 50 characters with an ellipsis if longer than 27 characters."""
+    return text[:50] + "..." if len(text) > 50 else text
+
+def preprocess_labels(doc):
+    """Applies label preprocessing to either validated or unvalidated labels."""
+    validation_preprocessor = ValidationPreprocessor()
+    labels = doc.validated_labels if doc.validated_labels else doc.labels
+    return validation_preprocessor.remove_prefixes(labels)
+
+# Endpoint to get a specific document
+@app.route('/document/<int:doc_id>')
+def get_document(doc_id):
+    try:
+        document = fetch_document_by_id(doc_id)
+        if not document:
+            return jsonify({"message": "Document not found"}), 404
+
+        formatted_document = format_document_detail(document)
+        return jsonify(formatted_document), 200
+    except Exception as e:
+        logger.error(f"Failed to retrieve document {doc_id}: {e}")
+        return jsonify({"error": "Failed to retrieve document"}), 500
+
+def fetch_document_by_id(doc_id):
+    """Fetch a single document entry from the database."""
+    entries = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+    return entries[0] if entries else None
+
+def format_document_detail(document):
+    """Formats detailed document data for JSON response."""
+    validation_preprocessor = ValidationPreprocessor()
+    labels = get_processed_labels(document, validation_preprocessor)
+    return {
+        'doc_id': document.doc_id,
+        'full_text': document.full_text,
+        'tokens': document.tokens,
+        'labels': labels
+    }
+
+def get_processed_labels(document, validation_preprocessor):
+    """Processes document labels through the validation preprocessor."""
+    labels_to_process = document.validated_labels if document.validated_labels else document.labels
+    return validation_preprocessor.remove_prefixes(labels_to_process) if labels_to_process else []
+
+# Endpoint to update a label
+@app.route("/update-labels", methods=["POST"])
+def update_labels():
+    try:
+        updates = request.get_json()
+        if not updates:
+            return jsonify({"message": "No updates provided"}), 400
+
+        logger.info(f"Received updates: {updates}")
+        return process_label_updates(updates)
+    except Exception as e:
+        logger.error(f"Failed to process updates: {e}")
+        return jsonify({"error": "Failed to process updates"}), 500
+
+def process_label_updates(updates):
+    """Processes label updates and applies changes to the database."""
+    response_messages = []
+    for update in updates:
+        doc_id = update.get('docId')
+        document = fetch_document(doc_id)
+        if not document:
+            response_messages.append({"message": f"Document with ID {doc_id} not found", "status": "error"})
+            continue
+
+        token_index = update.get('tokenIndex')
+        new_label = update.get('newLabel')
+        updated_labels = update_labels_in_document(document, token_index, new_label)
+
+        if updated_labels:
+            db_manager.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": updated_labels})
+            response_messages.append({"message": f"Labels updated for document ID {doc_id}", "status": "success"})
+        else:
+            response_messages.append(
+                {"message": f"Failed to update labels for document ID {doc_id}", "status": "error"})
+
+    return jsonify(response_messages), 200
+
+def fetch_document(doc_id):
+    """Fetches a single document entry from the database."""
+    entries = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
+    return entries[0] if entries else None
+
+def update_labels_in_document(document, token_index, new_label):
+    """Updates labels in a document based on the token index and new label provided."""
+    validation_preprocessor = ValidationPreprocessor()
+    labels = document.labels if document.validated_labels is None else document.validated_labels
+    if 0 <= token_index < len(labels):
+        previous_label = labels[token_index - 1] if token_index > 0 else "O"
+        prefix = determine_prefix(previous_label, new_label, validation_preprocessor)
+        labels[token_index] = prefix + new_label
+        next_label = (labels[token_index + 1]) if token_index < len(labels) - 1 else "O"
+        cleaned_next_label = validation_preprocessor.remove_prefixes([next_label])[0]
+        if cleaned_next_label != "O":
+            if new_label != cleaned_next_label:
+                labels[token_index + 1] = "B-" + cleaned_next_label
+            else:
+                labels[token_index + 1] = "I-" + cleaned_next_label
+        return labels
+    return None
+
+def determine_prefix(previous_label, new_label, preprocessor):
+    """Determines the prefix for a label based on the previous label and the new label."""
+    previous_label_no_prefix = preprocessor.remove_prefixes([previous_label])[0]
+    new_label_no_prefix = preprocessor.remove_prefixes([new_label])[0]
+    if previous_label_no_prefix == new_label_no_prefix and previous_label != "O":
+        return "I-"
+    else:
+        return "B-"
 
 
 if __name__ == '__main__':
