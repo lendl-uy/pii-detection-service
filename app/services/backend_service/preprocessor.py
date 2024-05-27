@@ -6,6 +6,7 @@ class Preprocessor:
 
     def __init__(self):
         self.full_text = None
+        self.full_text_cleaned = None
         self.tokens = None
 
     def parse_json(self, response_name, json_data):
@@ -19,7 +20,8 @@ class Preprocessor:
 
     def decode_escapes(self, input_text):
         # Decode all escape sequences using the unicode_escape codec
-        return codecs.decode(input_text, 'unicode_escape')
+        self.full_text_cleaned = codecs.decode(input_text, "unicode_escape")
+        return self.full_text_cleaned
 
     def tokenize(self, full_text):
         # Use regular expression to find sequences of word characters, punctuation, special characters, or whitespace.

@@ -12,13 +12,14 @@ class DocumentEntry(Base):
     tokens = Column(ARRAY(String))
     labels = Column(ARRAY(String))
     validated_labels = Column(ARRAY(String))
-    for_retrain = Column(Boolean)
+    for_retrain = Column(Boolean, default=True)
     created_at = Column(DateTime, default=func.now())  # Automatically sets to current timestamp on creation
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())  # Updates on any modification
 
 class ModelEntry(Base):
     __tablename__ = "model"
-    doc_id = Column(Integer, primary_key=True)
+    prediction_id = Column(Integer, primary_key=True)
+    doc_id = Column(Integer)
     model_name = Column(String)
     runtime = Column(Float)
     predicted_at = Column(DateTime, default=func.now()) # Automatically sets to current timestamp on creation
