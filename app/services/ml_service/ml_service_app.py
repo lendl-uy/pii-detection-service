@@ -4,7 +4,6 @@ import time
 import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-
 from app.infra.database_manager import DatabaseManager, DocumentEntry, ModelEntry
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
@@ -15,13 +14,23 @@ from app.services.ml_service.constants import PRETRAINED_EN_NER, ROW_COUNT_THRES
 # Load environment variables from .env file
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_NAME = os.getenv("DB_NAME")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Database configuration
+DB_CONFIG = {
+    "db_host": os.getenv("DB_HOST"),
+    "db_user": os.getenv("DB_USER"),
+    "db_pass": os.getenv("DB_PASS"),
+    "db_name": os.getenv("DB_NAME")
+}
+
+# Object store configuration
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 # Instantiate Flask application
 app = Flask(__name__)
@@ -29,7 +38,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Instantiate connections to the database and the object store
-db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
+db_manager = DatabaseManager(**DB_CONFIG)
 s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
 @app.route("/predict", methods=["POST"])
@@ -100,49 +109,69 @@ def predict():
 @app.route("/retrain", methods=["POST"])
 def retrain():
     logger.info("Initiating model re-training process.")
-
     try:
-        # Retrieve data flagged for re-training
-        entries = db_manager.query_entries(DocumentEntry,
-                                           {"for_retrain": True},
-                                           limit=ROW_COUNT_THRESHOLD_FOR_RETRAINING)
-        if len(entries) < 3:  # Ensure there is enough data to retrain
-            logger.warning("Insufficient data for re-training.")
-            return {"status": "Failed", "message": "Insufficient dataset size for re-training"}, 200
+        entries = fetch_entries_for_retraining()
+        if not entries:
+            return jsonify({"status": "Failed", "message": "Insufficient dataset size for re-training"}), 200
 
-        # Extract data components
-        texts = [entry.full_text for entry in entries]
-        tokens = [entry.tokens for entry in entries]
-        labels = [entry.labels for entry in entries]
+        texts, tokens, labels = extract_data(entries)
+        model_retrainer = initialize_model_retrainer()
+        if not model_retrainer:
+            return jsonify({"status": "Failed", "message": "Failed to initialize model retrainer"}), 500
 
-        # Initialize the model retrainer
+        trained_model, runtime = perform_retraining(model_retrainer, texts, tokens, labels)
+        f5_score = evaluate_model(model_retrainer, texts, tokens, labels)
+        update_retrain_flag(entries)
+
+        return jsonify({
+            "status": "Success",
+            "runtime": f"{runtime:.2f} s",
+            "evaluation": f5_score
+        }), 200
+    except Exception as e:
+        logger.error(f"Error during re-training: {e}")
+        return jsonify({"status": "Failed", "message": str(e)}), 500
+
+def fetch_entries_for_retraining():
+    entries = db_manager.query_entries(DocumentEntry,
+                                       {"for_retrain": True},
+                                       limit=ROW_COUNT_THRESHOLD_FOR_RETRAINING)
+    if len(entries) < 3:
+        logger.warning("Insufficient data for re-training.")
+        return None
+    return entries
+
+def extract_data(entries):
+    texts = [entry.full_text for entry in entries]
+    tokens = [entry.tokens for entry in entries]
+    labels = [entry.labels for entry in entries]
+    return texts, tokens, labels
+
+def initialize_model_retrainer():
+    try:
         model_retrainer = ModelRetrainer(PRETRAINED_EN_NER)
         model_retrainer.get_model(s3_manager)
-
-        # Split the dataset
-        split_data = model_retrainer.split_dataset(texts, tokens, labels)
-        texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = split_data
-
-        # Retrain the model
-        start_time = time.time()
-        model_retrainer.retrain(texts_train, tokens_train, labels_train, 1)
-        runtime = time.time() - start_time
-        logger.info(f"Model re-trained in {runtime:.2f} seconds.")
-
-        # Evaluate the model
-        f5_score = model_retrainer.evaluate(texts_test, tokens_test, labels_test)
-        logger.info(f"Model F5-Score: {f5_score}")
-
-        # Reset the re-training flag
-        db_manager.update_entry(DocumentEntry,
-                                {"for_retrain": True},
-                                {"for_retrain": False})
-
-        return {"status": "Success", "runtime": f"{runtime:.2f} s", "evaluation": f5_score}, 200
-
+        return model_retrainer
     except Exception as e:
-        logger.error(f"Error during re-training: {str(e)}")
-        return {"status": "Failed", "message": str(e)}, 500
+        logger.error(f"Failed to initialize model retrainer: {e}")
+        return None
+
+def perform_retraining(model_retrainer, texts, tokens, labels):
+    start_time = time.time()
+    model_retrainer.retrain(texts, tokens, labels, 1)
+    runtime = time.time() - start_time
+    logger.info(f"Model re-trained in {runtime:.2f} seconds.")
+    return model_retrainer, runtime
+
+def evaluate_model(model_retrainer, texts, tokens, labels):
+    f5_score = model_retrainer.evaluate(texts, tokens, labels)
+    logger.info(f"Model F5-Score: {f5_score}")
+    return f5_score
+
+def update_retrain_flag(entries):
+    for entry in entries:
+        db_manager.update_entry(DocumentEntry, {"id": entry.id}, {"for_retrain": False})
+    logger.info("Reset the re-training flag for all entries.")
 
 if __name__ == "__main__":
     app.run(debug=True, port=5002)
