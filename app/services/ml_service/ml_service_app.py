@@ -18,6 +18,8 @@ S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
+BACKEND_SERVICE_HOST = os.getenv("BACKEND_SERVICE_HOST")
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -95,7 +97,7 @@ def predict():
 
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
-        response = requests.post("http://127.0.0.1:5001/retrieve-predictions", json=predictor_response, headers=headers)
+        response = requests.post(f"http://{BACKEND_SERVICE_HOST}:5000/retrieve-predictions", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
@@ -174,4 +176,4 @@ def update_retrain_flag(entries):
     logger.info("Reset the re-training flag for all entries.")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    app.run(host='0.0.0.0', debug=True, port=5001)

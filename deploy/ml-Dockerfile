@@ -1,0 +1,21 @@
+FROM python:3.9-slim
+
+# Copy relevant codes
+COPY app/ /usr/src/app/app/
+
+WORKDIR /usr/src/app
+
+ENV PYTHONPATH=/usr/src/app
+
+# Print the current directory and its ls and show when I run docker compose
+RUN ls -la
+
+# Install dependencies
+COPY deploy/ml-requirements.txt ./
+RUN pip install -r ml-requirements.txt
+# RUN pip install --no-cache-dir -r backend-requirements.txt
+
+EXPOSE 5001
+
+# Print the current directory and its ls and show when I run docker compose
+CMD ["python", "app/services/ml_service/ml_service_app.py"]
