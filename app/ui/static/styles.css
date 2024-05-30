@@ -46,3 +46,44 @@
     margin: 0 auto;
     float: none;  /* Ensures it doesn't float and uses flex alignment instead */
 }
+
+.highlight { color: red; }
+.token { cursor: pointer; margin: 0 2px; display: inline-block; }
+.token {
+    position: relative;
+    padding: 2px 4px;
+    margin: 2px;
+    display: inline-block;
+    cursor: pointer;
+}
+.normal {
+    background-color: white;
+}
+.dropdown {
+    width: 200px;
+    top: 100%;
+    left: 0;
+    position: absolute !important;
+    z-index: 100; /* Ensure it's above other content */
+    background: white;
+    border: 1px solid #ccc;
+    display: none; /* Start hidden */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional: Adds shadow for better visibility */
+    padding: 5px;
+    display: none;
+}
+.dropdown button {
+    padding: 5px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    background: none;
+}
+.active-token {
+    background-color: #e6f7ff;
+    position: relative;
+}
+.active-label {
+    color: black;
+    font-weight: bold;
+}
