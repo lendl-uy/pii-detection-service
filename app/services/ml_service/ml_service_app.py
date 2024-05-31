@@ -8,7 +8,7 @@ from app.infra.database_manager import DatabaseManager, DocumentEntry, ModelEntr
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
 from app.services.ml_service.model_retrainer import ModelRetrainer
-from app.services.ml_service.constants import PRETRAINED_EN_NER, ROW_COUNT_THRESHOLD_FOR_RETRAINING
+from app.services.ml_service.constants import SPACY_PRETRAINED_EN_NER, DEBERTA_NER, ROW_COUNT_THRESHOLD_FOR_RETRAINING
 
 # For local testing only
 # Load environment variables from .env file
@@ -58,8 +58,8 @@ def predict():
     logger.info(f"full_text = {full_text}")
     # Instantiate the predictor
     logger.info("Pulling the latest model")
-    predictor = Predictor(PRETRAINED_EN_NER)
-    predictor.get_model(PRETRAINED_EN_NER, s3_manager)
+    predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    predictor.get_model(s3_manager)
 
     if not full_text:
         logger.info("No document found for prediction.")
@@ -68,7 +68,8 @@ def predict():
     # Perform predictions on the input full text
     logger.info("Predicting PIIs from the given full text")
     start_time = time.time()
-    predictor.predict(full_text, PRETRAINED_EN_NER)
+    # predictor.predict(full_text, SPACY_PRETRAINED_EN_NER) # Use SpaCy NER
+    predictor.predict_deberta(full_text, DEBERTA_NER) # Use DeBERTa
     logger.info(f"predictions = {predictor.predictions}")
     logger.info(f"len(predictions) = {len(predictor.predictions)}")
 
@@ -90,8 +91,8 @@ def predict():
             "document_id": updated_entry.doc_id,
             "runtime": f"{runtime:.2f} s"
         }
-        model_entry = ModelEntry(doc_id=entry[0].doc_id, model_name=PRETRAINED_EN_NER, runtime=runtime)
-        prediction_id = db_manager.add_entry(model_entry)
+        model_entry = ModelEntry(doc_id=entry[0].doc_id, model_name=SPACY_PRETRAINED_EN_NER, runtime=runtime)
+        _ = db_manager.add_entry(model_entry)
 
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
@@ -149,7 +150,7 @@ def extract_data(entries):
 
 def initialize_model_retrainer():
     try:
-        model_retrainer = ModelRetrainer(PRETRAINED_EN_NER)
+        model_retrainer = ModelRetrainer(SPACY_PRETRAINED_EN_NER)
         model_retrainer.get_model(s3_manager)
         return model_retrainer
     except Exception as e:

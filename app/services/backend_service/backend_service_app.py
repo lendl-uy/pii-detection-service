@@ -82,6 +82,8 @@ def handle_post_predictions():
     doc_id = data.get("document_id")
     runtime = data.get("runtime")
 
+    preprocessor = Preprocessor()
+
     if not doc_id:
         logger.error("Missing document ID in POST request")
         return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
@@ -91,13 +93,15 @@ def handle_post_predictions():
         if not entry:
             logger.error("Document not found")
             return jsonify({"status": "FAILED", "message": "Document not found"}), 404
-
         tokens, predictions = entry.tokens, entry.labels
+        cleaned_tokens = preprocessor.clean_tokens_deberta(tokens)
+        cleaned_predictions = predictions[1:-1]
         logger.info(f"Received POST response for doc_id = {doc_id}, runtime = {runtime}")
-        logger.info(f"Tokens: {tokens}, Predictions: {predictions}")
+        logger.info(f"Tokens: {cleaned_tokens}")
+        logger.info(f"Predictions: {cleaned_predictions}")
 
-        if predictions:
-            return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+        if cleaned_predictions:
+            return jsonify({"status": "SUCCESS", "tokens": cleaned_tokens, "predictions": cleaned_predictions}), 200
         else:
             return jsonify({"status": "FAILED", "message": "No predictions found"}), 404
     except Exception as e:
@@ -106,6 +110,7 @@ def handle_post_predictions():
 
 def handle_get_predictions():
     doc_id = request.args.get('doc_id')
+    preprocessor = Preprocessor()
     if not doc_id:
         logger.error("Missing document ID in GET query")
         return jsonify({"status": "FAILED", "message": "Missing document ID"}), 400
@@ -117,10 +122,13 @@ def handle_get_predictions():
             return jsonify({"status": "FAILED", "message": "Document not found"}), 404
 
         tokens, predictions = entry.tokens, entry.labels
+        cleaned_tokens = preprocessor.clean_tokens_deberta(tokens)
+        cleaned_predictions = predictions[1:-1]
         logger.info(f"Retrieved GET predictions for doc_id = {doc_id}")
-        logger.info(f"Tokens: {tokens}, Predictions: {predictions}")
+        logger.info(f"Tokens: {cleaned_tokens}")
+        logger.info(f"Predictions: {cleaned_predictions}")
 
-        return jsonify({"status": "SUCCESS", "tokens": tokens, "predictions": predictions}), 200
+        return jsonify({"status": "SUCCESS", "tokens": cleaned_tokens, "predictions": cleaned_predictions}), 200
     except Exception as e:
         logger.error(f"Error retrieving GET predictions: {str(e)}")
         return jsonify({"status": "FAILED", "message": f"Error: {str(e)}"}), 500
@@ -149,12 +157,15 @@ def format_document(doc):
     """Formats the document's data for JSON response."""
     truncated_text = truncate_text(doc.full_text)
     labels = preprocess_labels(doc)
+    preprocessor = Preprocessor()
+    cleaned_tokens = doc.tokens[1:-1]
+    cleaned_labels = labels[1:-1]
     return {
         'doc_id': doc.doc_id,
         'truncated_text': truncated_text,
         'full_text': doc.full_text,
-        'tokens': doc.tokens,
-        'labels': labels
+        'tokens': cleaned_tokens,
+        'labels': cleaned_labels
     }
 
 def truncate_text(text):
@@ -190,11 +201,13 @@ def format_document_detail(document):
     """Formats detailed document data for JSON response."""
     validation_preprocessor = ValidationPreprocessor()
     labels = get_processed_labels(document, validation_preprocessor)
+    cleaned_tokens = document.tokens[1:-1]
+    cleaned_labels = labels[1:-1]
     return {
         'doc_id': document.doc_id,
         'full_text': document.full_text,
-        'tokens': document.tokens,
-        'labels': labels
+        'tokens': cleaned_tokens,
+        'labels': cleaned_labels
     }
 
 def get_processed_labels(document, validation_preprocessor):
@@ -248,12 +261,17 @@ def update_labels_in_document(document, token_index, new_label):
     """Updates labels in a document based on the token index and new label provided."""
     validation_preprocessor = ValidationPreprocessor()
     labels = document.labels if document.validated_labels is None else document.validated_labels
+    token_index += 1
     if 0 <= token_index < len(labels):
+        logger.info(f"token_index = {token_index}")
         previous_label = labels[token_index - 1] if token_index > 0 else "O"
+        logger.info(f"previous_label = {previous_label}")
         prefix = determine_prefix(previous_label, new_label, validation_preprocessor)
         labels[token_index] = prefix + new_label
         next_label = (labels[token_index + 1]) if token_index < len(labels) - 1 else "O"
+        logger.info(f"next_label = {next_label}")
         cleaned_next_label = validation_preprocessor.remove_prefixes([next_label])[0]
+        logger.info(f"cleaned_next_label = {cleaned_next_label}")
         if cleaned_next_label != "O":
             if new_label != cleaned_next_label:
                 labels[token_index + 1] = "B-" + cleaned_next_label
@@ -266,7 +284,9 @@ def determine_prefix(previous_label, new_label, preprocessor):
     """Determines the prefix for a label based on the previous label and the new label."""
     previous_label_no_prefix = preprocessor.remove_prefixes([previous_label])[0]
     new_label_no_prefix = preprocessor.remove_prefixes([new_label])[0]
-    if previous_label_no_prefix == new_label_no_prefix and previous_label != "O":
+    if new_label == "O":
+        return ""
+    elif previous_label_no_prefix == new_label_no_prefix and previous_label != "O":
         return "I-"
     else:
         return "B-"

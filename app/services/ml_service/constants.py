@@ -1,18 +1,22 @@
 # Dataset directory and filenames
 MODELS_DIRECTORY = "models"
-BLANK_NER = "pii_ner_blank_spacy"
-PRETRAINED_EN_NER = "pii_ner_pretrained_sm_spacy"
+SPACY_BLANK_NER = "pii_ner_blank_spacy"
+SPACY_PRETRAINED_EN_NER = "pii_ner_pretrained_sm_spacy"
+DEBERTA_NER = "deberta3base_1024"
 
 # Dataset directory and filenames
 DATASETS_DIRECTORY = "datasets"
 INITIAL_TRAIN_SET = "train.json"
 INITIAL_TEST_SET = "test.json"
 
-# Model parameters
+# SpaCy Model parameters
 EPOCHS = 5
 DROPOUT_RATE = 0.3
 TRAIN_SET_PERCENTAGE = 0.3
 ROW_COUNT_THRESHOLD_FOR_RETRAINING = 100
+
+# DeBERTa Model parameters
+INFERENCE_MAX_LENGTH = 2048
 
 # Sample data for the predictor
 sample_text = "Reporting process\n\nby Gilberto Gamboa\n\nChallenge\n\nI received a promotion of being the Regional Controller, along with my actual position of\n\nCountry CFO. The main responsibility of this new position was to weekly report the results\n\nfor the week and estimate the final results of the month of 4 countries and consolidated\n\nthose.\n\nWhen I was receiving the position, I went to visit my colleague, former Regional Controller,\n\nwho was promoted to Country CEO and now had interest conflicts of being the controller.\n\nThe process to consolidate the information of the 4 countries was that the country controllers\n\nsent him an email with the main figures for the week, he forwarded those to his country\n\naccountant who consolidated it, the accountant sent him the consolidated report and he\n\nfinally reported to the headquarters. The whole process took almost a full business day to\n\ncomplete.\n\nGiven that my responsibilities as Country CFO demanded more attention because my\n\ncountry had more operations, I decided to change the process in order to reduce the\n\nduration and to ensure standardization in the format, and actually, reduce the human\n\nintervention, making that the country controllers work directly in the consolidation file.\n\nSelection\n\nHaving in mind that there was a different kind of users of file, I select some of those to\n\ndetermine what was the main important things to take into account in the moment of the\n\nprocess of the information and the reading of the same. In that sense, we form a group of\n\nthe country controllers, country CEOs, IT guys, and people from the headquarters to find the\n\nbest solutions possible.\n\nApplication\n\nFor the first lunch, we focused on the consolidation process in order to avoid the copy-paste\n\nprocesses and reducing the manual intervention so, we build an online application where all\n\nthe controllers fill the figure of their respective country, along with the comments. During the\n\nfirst week of the first stage, we sent the new report along with the old one, and after the\n\nmeeting with the headquarters team, we ask for a post-meeting review of the new format, all\n\nthe assistants provided their comments and suggestions that were the input for the next\n\nreport.\n\nFor the second lunch, we focused on the feedback received from the assistants to the review\n\nmeeting, we adjust the report and we were able to eliminate the old one. The final report\n\nincluded all the suggestions received but the best of all is that reduced the time investment\n\nfrom about 36 men hours to around 8, without missing any valuable information and\n\nincluding new data that the stakeholders appreciated so much.\n\nInsight\n\nWith the application of the learning launch tool, the controller’s team along with the main\n\nstakeholders identified different assumptions and designed tools to test these assumptions.\n\nOn the other hand, we found probable requirements from headquarters, expecting to find\n\nthat a more agile approach that improved the workflow, reduced the time investment of\n\neveryone in the team and that both our team and the key stakeholders were very satisfied\n\nwith the results of the exercise and the new report.\n\nThe final report was slightly different from what we anticipated, but the differences were\n\nmore related to form and a few topics to be included in the report.\n\nApproach\n\nDespite that, the team was not used to design thinking tools, they were able to work with the\n\nlearning launch that was the appropriate tool. The team needs to review the insight gained\n\nfrom our first two launches and continuously evaluate this insight and new ones into future\n\nlaunch designs, especially taking into account that the full automation of the reports will take\n\nat least 4 years more according to the ERP implementation plan of the headquarter.\n\n"
