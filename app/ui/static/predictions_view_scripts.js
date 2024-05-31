@@ -38,25 +38,32 @@ $(document).ready(function() {
     }
 
     function integrateTokens(fullText, tokens, labels) {
-        let tokenIndex = 0;
-        let lastIndex = 0;
-        let resultText = '';
+        let reconstructedText = '';
+        let isFirstToken = true; // Track the first token to avoid leading space
 
         tokens.forEach((token, index) => {
-            let position = fullText.indexOf(token, lastIndex);
-            if (position !== -1) {
-                let beforeText = fullText.substring(lastIndex, position);
-                resultText += beforeText;
-                let tokenHtml = `<span class="token ${labels[index] !== 'O' ? 'highlight' : ''}"
-                                data-bs-toggle="tooltip" data-bs-placement="top" title="Label: ${labels[index]}">
-                                ${token}</span>`;
-                resultText += tokenHtml;
-                lastIndex = position + token.length;
+            // Add a space before each token except for the first one
+            console.log("Token " + token);
+
+            if (token.startsWith("▁")) {
+                if (!isFirstToken) {
+                    reconstructedText += " ";
+                }
+                let underscore_removed_token = token.slice(1,);
+                // Determine color based on the label
+                const color = labels[index] !== 'O' ? 'red' : 'black'; // Customize colors as needed
+                // Add the token with inline styling
+                reconstructedText += `<span style="color: ${color};">${underscore_removed_token}</span>`;
+                isFirstToken = false;
+            } else {
+                // Determine color based on the label
+                const color = labels[index] !== 'O' ? 'red' : 'black'; // Customize colors as needed
+                // Add the token with inline styling
+                reconstructedText += `<span style="color: ${color};">${token}</span>`;
             }
         });
 
-        resultText += fullText.substring(lastIndex);
-        return resultText;
+        return reconstructedText;
     }
 
     window.redirectToValidate = function(docId) {

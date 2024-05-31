@@ -2,7 +2,7 @@ import pytest
 import os
 from dotenv import load_dotenv
 
-from app.services.ml_service.constants import BLANK_NER, PRETRAINED_EN_NER, sample_text, sample_tokens
+from app.services.ml_service.constants import SPACY_BLANK_NER, SPACY_PRETRAINED_EN_NER, sample_text, sample_tokens
 from app.services.ml_service.predictor import Predictor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.database_manager import DatabaseManager, DocumentEntry
@@ -22,10 +22,10 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 @pytest.fixture(scope="module")
 def model():
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    predictor = Predictor(PRETRAINED_EN_NER)
-    predictor.get_model(PRETRAINED_EN_NER, s3_manager)
+    predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    predictor.get_model(s3_manager)
 
     yield db_manager, predictor
 
@@ -45,7 +45,7 @@ def test_predict_sample_document_from_test_set(model):
     assert text is not None, "No document retrieved."
 
     # Make predictions
-    predictor.predict(text, PRETRAINED_EN_NER)
+    predictor.predict(text, SPACY_PRETRAINED_EN_NER)
     predictor.save_predictions_to_database(db_manager)
 
     # Check if predictions are saved and match
@@ -55,9 +55,9 @@ def test_predict_sample_document_from_test_set(model):
     entry = db_manager.query_entries(DocumentEntry, {"full_text": text}, limit=1)[0]
 
     # print fulltext, tokens, labels, and predictions
-    print(f"Full Text: {entry[0].full_text}")
-    print(f"Tokens: {entry[0].tokens}")
-    print(f"Labels: {entry[0].labels}")
+    print(f"Full Text: {entry.full_text}")
+    print(f"Tokens: {entry.tokens}")
+    print(f"Labels: {entry.labels}")
     print(f"Predictions: {predictor.predictions}")
 
-    assert entry[0].labels == predictor.predictions, "Inserted labels do not match."
+    assert entry.labels == predictor.predictions, "Inserted labels do not match."
