@@ -26,17 +26,45 @@ function renderTokens() {
     const container = document.getElementById('document-viewer');
     container.innerHTML = ''; // Clear existing tokens
 
+    let isFirstToken = true; // To manage spacing correctly
+
     data.tokens.forEach((token, index) => {
+        // Check if token starts with "▁" for new word indication
+        if (token.startsWith("▁")) {
+            if (!isFirstToken) {
+                // Add a space before tokens that start a new word but are not the first token
+                container.appendChild(document.createTextNode(' '));
+            }
+            // Remove the "▁" from the token before displaying it
+            token = token.slice(1);
+            isFirstToken = false; // Update flag since we've processed a token
+        } else {
+            // For tokens that do not start with "▁" and are not the first token, add a space
+            if (!isFirstToken) {
+                container.appendChild(document.createTextNode(' '));
+            }
+        }
+
+        // Create a span for the token
         const span = document.createElement('span');
         span.classList.add('token');
 
+        // Add class based on label, which affects color through CSS potentially
         let className = cssClassNameFromLabel(index);
         if (className) { // Only add if className is not empty
             span.classList.add(className);
         }
 
-        span.textContent = token + " ";
+        // Set the text color based on the label
+        span.style.color = data.labels[index] !== 'O' ? 'red' : 'black';
+
+        // Set token text
+        span.textContent = token;
+
+        // Make token clickable
         span.onclick = function() { toggleDropdown(this, index); };
+
+        // Append the span to the container
         container.appendChild(span);
     });
 }

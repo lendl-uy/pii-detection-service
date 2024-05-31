@@ -48,7 +48,7 @@ def test_model_retrainer_get_dataset(infra_manager):
         labels = [entry.labels for entry in data_entries]
 
         # Process the data correctly
-        model_retrainer = ModelRetrainer(BLANK_NER)
+        model_retrainer = ModelRetrainer(SPACY_BLANK_NER)
         texts_train, tokens_train, labels_train, texts_test, tokens_test, labels_test = model_retrainer.split_dataset(texts, tokens, labels)
         model_retrainer.get_model(s3_manager)
 

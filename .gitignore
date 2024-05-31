@@ -2,7 +2,6 @@
 __pycache__
 .vscode
 .idea/*
-data_ingestion/db_sandbox.sql
 
 # Ignore train.json to circumvent Git LFS issues
 model_training/datasets/train.json
@@ -22,3 +21,5 @@ staging
 # Ignore pulled model
 app/services/ml_service/pii_ner_pretrained_sm_spacy
 tests/pii_ner_pretrained_sm_spacy
+model_training/models/deberta3base_1024
+model_training/models/spacy/config.cfg

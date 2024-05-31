@@ -14,3 +14,5 @@ moto
 sqlalchemy
 Flask
 python-dotenv
+datasets
+accelerate
