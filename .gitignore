@@ -22,5 +22,6 @@ staging
 app/services/ml_service/pii_ner_pretrained_sm_spacy
 app/services/ml_service/deberta3base_1024
 tests/pii_ner_pretrained_sm_spacy
+tests/deberta3base_1024
 model_training/models/deberta3base_1024
 model_training/models/spacy/config.cfg

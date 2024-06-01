@@ -2,7 +2,7 @@ import pytest
 import os
 from dotenv import load_dotenv
 
-from app.services.ml_service.constants import SPACY_BLANK_NER, SPACY_PRETRAINED_EN_NER, sample_text, sample_tokens
+from app.services.ml_service.constants import DEBERTA_NER, sample_text, sample_tokens
 from app.services.ml_service.predictor import Predictor
 from app.infra.object_store_manager import ObjectStoreManager
 from app.infra.database_manager import DatabaseManager, DocumentEntry
@@ -16,21 +16,19 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 @pytest.fixture(scope="module")
 def model():
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
-    predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    predictor = Predictor(DEBERTA_NER)
     predictor.get_model(s3_manager)
 
     yield db_manager, predictor
 
-    # predictor.delete_model(PRETRAINED_EN_NER)
-    # db_manager.clear_table(DocumentEntry)
+    # predictor.delete_model(DEBERTA_NER)
+    db_manager.clear_table(DocumentEntry)
 
 def test_predict_sample_document_from_test_set(model):
     db_manager, predictor = model
@@ -45,7 +43,7 @@ def test_predict_sample_document_from_test_set(model):
     assert text is not None, "No document retrieved."
 
     # Make predictions
-    predictor.predict(text, SPACY_PRETRAINED_EN_NER)
+    predictor.predict_deberta(text, DEBERTA_NER)
     predictor.save_predictions_to_database(db_manager)
 
     # Check if predictions are saved and match
