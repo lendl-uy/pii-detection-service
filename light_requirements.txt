@@ -8,3 +8,4 @@ sqlalchemy
 Flask
 python-dotenv
 torch
+spacy
