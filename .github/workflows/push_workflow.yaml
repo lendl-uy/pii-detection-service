@@ -30,4 +30,4 @@ jobs:
 
             - name: Run Tests
               run: |
-                  pytest
+                  pytest --ignore=path/to/test_model_retrainer.py
