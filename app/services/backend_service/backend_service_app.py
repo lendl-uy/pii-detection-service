@@ -1,11 +1,13 @@
 import os
-import psycopg2
 import logging
 import requests
+
+import psycopg2
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
-from preprocessor import Preprocessor
-from validation_preprocessor import ValidationPreprocessor
+
+from app.services.backend_service.preprocessor import Preprocessor
+from app.services.backend_service.validation_preprocessor import ValidationPreprocessor
 from app.infra.database_manager import DatabaseManager, DocumentEntry
 
 # Load environment variables from .env file
@@ -19,9 +21,12 @@ DB_CONFIG = {
     "db_name": os.getenv("DB_NAME")
 }
 
+# ML Service Host
+ML_SERVICE_HOST = os.getenv("ML_SERVICE_HOST")
+
 # Flask app setup
-template_dir = os.path.abspath("../../ui/templates")
-static_dir = os.path.abspath("../../ui/static")
+template_dir = os.path.abspath("app/ui/templates")
+static_dir = os.path.abspath("app/ui/static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # Logger setup
@@ -61,7 +66,7 @@ def save_essay():
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
 
-        response = requests.post("http://127.0.0.1:5002/predict", json={"doc_id": doc_id})
+        response = requests.post(f"http://{ML_SERVICE_HOST}:5001/predict", json={"doc_id": doc_id})
         return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
     except psycopg2.Error as e:
         logger.error(f"Database error: {e}")
@@ -293,4 +298,4 @@ def determine_prefix(previous_label, new_label, preprocessor):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5000)
