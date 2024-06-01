@@ -8,15 +8,13 @@ from app.infra.database_manager import DatabaseManager, DocumentEntry, ModelEntr
 from app.infra.object_store_manager import ObjectStoreManager
 from app.services.ml_service.predictor import Predictor
 from app.services.ml_service.model_retrainer import ModelRetrainer
-from app.services.ml_service.constants import SPACY_PRETRAINED_EN_NER, DEBERTA_NER, ROW_COUNT_THRESHOLD_FOR_RETRAINING
+from app.services.ml_service.constants import DEBERTA_NER, ROW_COUNT_THRESHOLD_FOR_RETRAINING
 
 # For local testing only
 # Load environment variables from .env file
 load_dotenv()
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 # Database configuration
 DB_CONFIG = {
