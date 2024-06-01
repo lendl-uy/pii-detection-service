@@ -48,7 +48,7 @@ def test_download(object_store_manager):
     """Test the download functionality."""
     object_store_manager.s3_client.put_object(Bucket=S3_BUCKET_NAME, Key="download.txt", Body="Download me!")
 
-    object_store_manager.download("download.txt", "downloaded.txt")
+    object_store_manager.download("datasets/download.txt", "datasets/downloaded.txt")
 
     # Verify the file was downloaded
     with open("downloaded.txt", "r") as f:

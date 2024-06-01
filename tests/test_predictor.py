@@ -27,7 +27,7 @@ def model():
 
     yield db_manager, predictor
 
-    # predictor.delete_model(DEBERTA_NER)
+    predictor.delete_model(DEBERTA_NER)
     db_manager.clear_table(DocumentEntry)
 
 def test_predict_sample_document_from_test_set(model):
