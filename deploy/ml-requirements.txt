@@ -8,3 +8,5 @@ moto
 sqlalchemy
 Flask
 python-dotenv
+torch
+transformers

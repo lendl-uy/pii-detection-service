@@ -173,4 +173,4 @@ def update_retrain_flag(entries):
     logger.info("Reset the re-training flag for all entries.")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True, port=5001)
+    app.run(host='0.0.0.0', port=5001)
