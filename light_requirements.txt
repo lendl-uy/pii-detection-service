@@ -9,3 +9,4 @@ Flask
 python-dotenv
 torch
 spacy
+transformers
