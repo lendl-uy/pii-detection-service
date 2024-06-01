@@ -18,9 +18,6 @@ S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-# Load environment variables from .env file
-load_dotenv()
-
 # Database configuration
 DB_CONFIG = {
     "db_host": os.getenv("DB_HOST"),
@@ -58,7 +55,8 @@ def predict():
     logger.info(f"full_text = {full_text}")
     # Instantiate the predictor
     logger.info("Pulling the latest model")
-    predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    # predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    predictor = Predictor(DEBERTA_NER)
     predictor.get_model(s3_manager)
 
     if not full_text:
@@ -91,7 +89,7 @@ def predict():
             "document_id": updated_entry.doc_id,
             "runtime": f"{runtime:.2f} s"
         }
-        model_entry = ModelEntry(doc_id=entry[0].doc_id, model_name=SPACY_PRETRAINED_EN_NER, runtime=runtime)
+        model_entry = ModelEntry(doc_id=entry[0].doc_id, model_name=DEBERTA_NER, runtime=runtime)
         _ = db_manager.add_entry(model_entry)
 
         # Send predictions to the backend service
@@ -150,7 +148,8 @@ def extract_data(entries):
 
 def initialize_model_retrainer():
     try:
-        model_retrainer = ModelRetrainer(SPACY_PRETRAINED_EN_NER)
+        # model_retrainer = ModelRetrainer(SPACY_PRETRAINED_EN_NER)
+        model_retrainer = ModelRetrainer(DEBERTA_NER)
         model_retrainer.get_model(s3_manager)
         return model_retrainer
     except Exception as e:
