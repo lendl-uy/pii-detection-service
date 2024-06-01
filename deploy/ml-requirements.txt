@@ -10,3 +10,4 @@ Flask
 python-dotenv
 torch
 transformers
+gunicorn

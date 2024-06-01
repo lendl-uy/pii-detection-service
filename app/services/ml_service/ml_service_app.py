@@ -51,7 +51,7 @@ def predict():
     if not entry:
         return jsonify({"status": "FAILED", "message": "Document not found."}), 404
     full_text = entry[0].full_text
-    logger.info(f"full_text = {full_text}")
+
     # Instantiate the predictor
     logger.info("Pulling the latest model")
     # predictor = Predictor(SPACY_PRETRAINED_EN_NER)
@@ -68,8 +68,6 @@ def predict():
     # predictor.predict(full_text, SPACY_PRETRAINED_EN_NER) # Use SpaCy NER
     predictor.predict_deberta(full_text, DEBERTA_NER) # Use DeBERTa
     logger.info(f"predictions = {predictor.predictions}")
-    logger.info(f"len(predictions) = {len(predictor.predictions)}")
-
     logger.info("Done predicting PIIs")
     runtime = time.time() - start_time
 
@@ -173,4 +171,4 @@ def update_retrain_flag(entries):
     logger.info("Reset the re-training flag for all entries.")
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5001)
+    app.run(port=8001, debug=True)
