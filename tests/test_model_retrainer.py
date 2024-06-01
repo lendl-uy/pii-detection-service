@@ -16,13 +16,11 @@ DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_NAME = os.getenv("DB_NAME")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 @pytest.fixture(scope="function")
 def infra_manager():
     db_manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
-    s3_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    s3_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     yield db_manager, s3_manager
 

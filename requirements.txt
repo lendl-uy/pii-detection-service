@@ -16,3 +16,5 @@ Flask
 python-dotenv
 datasets
 accelerate
+evaluate
+seqeval

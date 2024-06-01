@@ -10,8 +10,7 @@ from app.infra.object_store_manager import ObjectStoreManager
 load_dotenv()
 
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
 @pytest.fixture
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
@@ -30,7 +29,7 @@ def s3_client(aws_credentials):
 @pytest.fixture
 def object_store_manager(s3_client):
     """Create an ObjectStoreManager instance with a mocked S3 client."""
-    return ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    return ObjectStoreManager(S3_BUCKET_NAME)
 
 
 def test_upload(object_store_manager):
@@ -49,7 +48,7 @@ def test_download(object_store_manager):
     """Test the download functionality."""
     object_store_manager.s3_client.put_object(Bucket=S3_BUCKET_NAME, Key="download.txt", Body="Download me!")
 
-    object_store_manager.download("download.txt", "downloaded.txt")
+    object_store_manager.download("datasets/download.txt", "datasets/downloaded.txt")
 
     # Verify the file was downloaded
     with open("downloaded.txt", "r") as f:

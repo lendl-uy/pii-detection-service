@@ -23,19 +23,18 @@ SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 def db_manager():
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
-    manager.clear_table()
+    manager.clear_table(DocumentEntry)
 
 def test_ingest_full_text_and_tokens_to_database(db_manager):
-    print("Current Working Directory:", os.getcwd())
 
-    object_store_manager = ObjectStoreManager(S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    object_store_manager = ObjectStoreManager(S3_BUCKET_NAME)
 
     # Ensure the sample essay file is available
     sample_file_path = f"datasets/{SAMPLE_ESSAY_NO_LABELS}"
     if not os.path.exists(sample_file_path):
         print(
             f"Downloading sample essay file. s3://{S3_BUCKET_NAME}/{sample_file_path}"
-            f" to {SAMPLE_ESSAY_NO_LABELS}"
+            f" to datasets/{SAMPLE_ESSAY_NO_LABELS}"
         )
         object_store_manager.download(sample_file_path, SAMPLE_ESSAY_NO_LABELS)
 
