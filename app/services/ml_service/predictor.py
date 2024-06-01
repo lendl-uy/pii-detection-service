@@ -4,8 +4,7 @@ import spacy
 import shutil
 import torch
 import json
-from transformers import AutoTokenizer, AutoModelForTokenClassification, Trainer, TrainingArguments, DataCollatorForTokenClassification
-from datasets import Dataset
+from transformers import AutoTokenizer, AutoModelForTokenClassification
 from pathlib import Path
 
 from app.services.ml_service.constants import MODELS_DIRECTORY, INFERENCE_MAX_LENGTH
