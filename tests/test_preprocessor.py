@@ -36,7 +36,7 @@ def test_ingest_full_text_and_tokens_to_database(db_manager):
             f"Downloading sample essay file. s3://{S3_BUCKET_NAME}/{sample_file_path}"
             f" to datasets/{SAMPLE_ESSAY_NO_LABELS}"
         )
-        object_store_manager.download(sample_file_path, SAMPLE_ESSAY_NO_LABELS)
+        object_store_manager.download(sample_file_path, f"tests/data/{SAMPLE_ESSAY_NO_LABELS}")
 
     assert os.path.exists(SAMPLE_ESSAY_NO_LABELS), "Sample essay file not downloaded correctly."
 

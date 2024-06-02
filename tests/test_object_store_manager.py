@@ -38,7 +38,7 @@ def test_upload(object_store_manager):
     with open("tests/test.txt", "w") as f:
         f.write('Hello, world!')
 
-    object_store_manager.upload("tests/test.txt", "test.txt")
+    object_store_manager.upload("tests/data/test.txt", "test.txt")
 
     # Verify the file was uploaded
     body = object_store_manager.s3_client.get_object(Bucket=S3_BUCKET_NAME, Key="test.txt")["Body"]
@@ -48,10 +48,10 @@ def test_download(object_store_manager):
     """Test the download functionality."""
     object_store_manager.s3_client.put_object(Bucket=S3_BUCKET_NAME, Key="download.txt", Body="Download me!")
 
-    object_store_manager.download("datasets/download.txt", "tests/downloaded.txt")
+    object_store_manager.download("datasets/download.txt", "tests/data/downloaded.txt")
 
     # Verify the file was downloaded
-    with open("tests/downloaded.txt", "r") as f:
+    with open("tests/data/downloaded.txt", "r") as f:
         content = f.read()
     assert content == "Download me!"
 
