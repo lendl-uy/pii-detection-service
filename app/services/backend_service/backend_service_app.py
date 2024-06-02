@@ -354,15 +354,15 @@ def update_labels_in_document(document, tokens, token_index, new_label):
     first_deberta_token = deberta_custom_tokens_dict[token_index][0]
     starting_index = document.tokens.index(first_deberta_token)
     for i in range(starting_index, starting_index + token_count):
-        logger.info(f"token_index = {i}")
+        # logger.info(f"token_index = {i}")
         previous_label = labels[i - 1] if i > 0 else "O"
-        logger.info(f"previous_label = {previous_label}")
+        # logger.info(f"previous_label = {previous_label}")
         prefix = determine_prefix(previous_label, new_label, validation_preprocessor)
         labels[i] = prefix + new_label
         next_label = (labels[i + 1]) if i < len(labels) - 1 else "O"
-        logger.info(f"next_label = {next_label}")
+        # logger.info(f"next_label = {next_label}")
         cleaned_next_label = validation_preprocessor.remove_prefixes([next_label])[0]
-        logger.info(f"cleaned_next_label = {cleaned_next_label}")
+        # logger.info(f"cleaned_next_label = {cleaned_next_label}")
         if cleaned_next_label != "O":
             if new_label != cleaned_next_label:
                 labels[i + 1] = "B-" + cleaned_next_label
