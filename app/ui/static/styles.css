@@ -47,13 +47,11 @@
     float: none;  /* Ensures it doesn't float and uses flex alignment instead */
 }
 .highlight { color: red; }
-.token { cursor: pointer; margin: 0 2px; display: inline-block; }
 .token {
-    position: relative;
-    padding: 2px 4px;
-    margin: 2px;
-    display: inline-block;
     cursor: pointer;
+    position: relative;
+    /*margin: 2px;*/
+    display: inline-block;
 }
 .normal {
     background-color: white;

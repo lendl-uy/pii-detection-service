@@ -25,8 +25,8 @@ DB_CONFIG = {
 ML_SERVICE_HOST = os.getenv("ML_SERVICE_HOST")
 
 # Flask app setup
-template_dir = os.path.abspath("app/ui/templates")
-static_dir = os.path.abspath("app/ui/static")
+template_dir = os.path.abspath("../../ui/templates")
+static_dir = os.path.abspath("../../ui/static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # Logger setup
@@ -66,7 +66,7 @@ def save_essay():
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
 
-        response = requests.post(f"http://{ML_SERVICE_HOST}:5001/predict", json={"doc_id": doc_id})
+        response = requests.post(f"http://{ML_SERVICE_HOST}:8001/predict", json={"doc_id": doc_id})
         return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
     except psycopg2.Error as e:
         logger.error(f"Database error: {e}")
@@ -126,6 +126,9 @@ def handle_get_predictions():
             logger.error("Document not found")
             return jsonify({"status": "FAILED", "message": "Document not found"}), 404
 
+        full_text = entry.full_text
+        logger.info(f"full_text = {full_text}")
+        logger.info(f"Retrieved GET predictions for doc_id = {doc_id}")
         tokens, predictions = entry.tokens, entry.labels
         cleaned_tokens = preprocessor.clean_tokens_deberta(tokens)
         cleaned_predictions = predictions[1:-1]
@@ -162,15 +165,17 @@ def format_document(doc):
     """Formats the document's data for JSON response."""
     truncated_text = truncate_text(doc.full_text)
     labels = preprocess_labels(doc)
-    preprocessor = Preprocessor()
     cleaned_tokens = doc.tokens[1:-1]
     cleaned_labels = labels[1:-1]
+    logger.info(f"cleaned_tokens = {cleaned_tokens}")
+    logger.info(f"cleaned_labels = {cleaned_labels}")
+    merged_cleaned_tokens, merged_cleaned_labels = merge_tokens_and_labels(cleaned_tokens, cleaned_labels)
     return {
         'doc_id': doc.doc_id,
         'truncated_text': truncated_text,
         'full_text': doc.full_text,
-        'tokens': cleaned_tokens,
-        'labels': cleaned_labels
+        'tokens': merged_cleaned_tokens,
+        'labels': merged_cleaned_labels
     }
 
 def truncate_text(text):
@@ -202,17 +207,68 @@ def fetch_document_by_id(doc_id):
     entries = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
     return entries[0] if entries else None
 
+
+def merge_tokens_and_labels(tokens, labels):
+    merged_tokens = []
+    merged_labels = []
+
+    current_token = ""
+    current_label = ""
+    token_sequence_start = True
+
+    padded_tokens = tokens + ["▁"]
+    padded_labels = labels + ["O"]
+
+    for i in range(len(tokens)):
+        token = padded_tokens[i]
+        label = padded_labels[i]
+        next_token = padded_tokens[i + 1]
+        next_label = padded_labels[i + 1]
+        if label == next_label:
+            if not next_token.startswith("▁"):
+                current_label = label
+                if token_sequence_start:
+                    current_token += token + next_token
+                    token_sequence_start = False
+                else:
+                    current_token += next_token
+            else:
+                if current_token:
+                    # print(f"Appending here 1 | token = {current_token}")
+                    merged_tokens.append(current_token)
+                    merged_labels.append(current_label)
+                    current_token = ""
+                    token_sequence_start = True
+                else:
+                    # print(f"Appending here 5 | token = {token}")
+                    merged_tokens.append(token)
+                    merged_labels.append(label)
+        else:
+            if current_token:
+                # print(f"Appending here 2 | token = {current_token}")
+                merged_tokens.append(current_token)
+                merged_labels.append(current_label)
+                current_token = ""
+                token_sequence_start = True
+            else:
+                # print(f"Appending here 6 | token = {token}")
+                merged_tokens.append(token)
+                merged_labels.append(label)
+    return merged_tokens, merged_labels
+
 def format_document_detail(document):
     """Formats detailed document data for JSON response."""
     validation_preprocessor = ValidationPreprocessor()
     labels = get_processed_labels(document, validation_preprocessor)
     cleaned_tokens = document.tokens[1:-1]
     cleaned_labels = labels[1:-1]
+    logger.info(f"cleaned_tokens = {cleaned_tokens}")
+    merged_cleaned_tokens, merged_cleaned_labels = merge_tokens_and_labels(cleaned_tokens, cleaned_labels)
     return {
         'doc_id': document.doc_id,
         'full_text': document.full_text,
-        'tokens': cleaned_tokens,
-        'labels': cleaned_labels
+        'tokens': merged_cleaned_tokens,
+        'labels': merged_cleaned_labels
     }
 
 def get_processed_labels(document, validation_preprocessor):
@@ -240,13 +296,16 @@ def process_label_updates(updates):
     for update in updates:
         doc_id = update.get('docId')
         document = fetch_document(doc_id)
+        tokens = update.get('tokens')
         if not document:
             response_messages.append({"message": f"Document with ID {doc_id} not found", "status": "error"})
             continue
 
         token_index = update.get('tokenIndex')
         new_label = update.get('newLabel')
-        updated_labels = update_labels_in_document(document, token_index, new_label)
+
+        logger.info(f"UPDATE: {new_label} at {token_index}")
+        updated_labels = update_labels_in_document(document, tokens, token_index, new_label)
 
         if updated_labels:
             db_manager.update_entry(DocumentEntry, {"doc_id": doc_id}, {"validated_labels": updated_labels})
@@ -257,33 +316,59 @@ def process_label_updates(updates):
 
     return jsonify(response_messages), 200
 
+def rebuild_fragmented_tokens(tokens, merged_tokens):
+    token_dictionary = {}
+    temp_string = ""
+    j = 0
+    k = 1
+    for i in range(len(tokens)):
+        token = tokens[i]
+        temp_string += token
+        merged_token = merged_tokens[j]
+        if temp_string == merged_token:
+            # token_index_tuple = (merged_tokens[j], j)
+            if len(tokens[i - k:i]) > 1:
+                token_dictionary[j] = tokens[i - k + 1:i + 1]
+            else:
+                token_dictionary[j] = tokens[i:i + 1]
+            j += 1
+            temp_string = ""
+            k = 1
+        else:
+            k += 1
+    return token_dictionary
+
 def fetch_document(doc_id):
     """Fetches a single document entry from the database."""
     entries = db_manager.query_entries(DocumentEntry, {"doc_id": doc_id}, limit=1)
     return entries[0] if entries else None
 
-def update_labels_in_document(document, token_index, new_label):
+def update_labels_in_document(document, tokens, token_index, new_label):
     """Updates labels in a document based on the token index and new label provided."""
     validation_preprocessor = ValidationPreprocessor()
     labels = document.labels if document.validated_labels is None else document.validated_labels
-    token_index += 1
-    if 0 <= token_index < len(labels):
-        logger.info(f"token_index = {token_index}")
-        previous_label = labels[token_index - 1] if token_index > 0 else "O"
+
+    # Build dictionary of tokens mapping DeBERTa's tokens and custom tokens
+    deberta_custom_tokens_dict = rebuild_fragmented_tokens(document.tokens[1:-1], tokens)
+    token_count = len(deberta_custom_tokens_dict[token_index])
+    first_deberta_token = deberta_custom_tokens_dict[token_index][0]
+    starting_index = document.tokens.index(first_deberta_token)
+    for i in range(starting_index, starting_index + token_count):
+        logger.info(f"token_index = {i}")
+        previous_label = labels[i - 1] if i > 0 else "O"
         logger.info(f"previous_label = {previous_label}")
         prefix = determine_prefix(previous_label, new_label, validation_preprocessor)
-        labels[token_index] = prefix + new_label
-        next_label = (labels[token_index + 1]) if token_index < len(labels) - 1 else "O"
+        labels[i] = prefix + new_label
+        next_label = (labels[i + 1]) if i < len(labels) - 1 else "O"
         logger.info(f"next_label = {next_label}")
         cleaned_next_label = validation_preprocessor.remove_prefixes([next_label])[0]
         logger.info(f"cleaned_next_label = {cleaned_next_label}")
         if cleaned_next_label != "O":
             if new_label != cleaned_next_label:
-                labels[token_index + 1] = "B-" + cleaned_next_label
+                labels[i + 1] = "B-" + cleaned_next_label
             else:
-                labels[token_index + 1] = "I-" + cleaned_next_label
-        return labels
-    return None
+                labels[i + 1] = "I-" + cleaned_next_label
+    return labels
 
 def determine_prefix(previous_label, new_label, preprocessor):
     """Determines the prefix for a label based on the previous label and the new label."""

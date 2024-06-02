@@ -19,3 +19,4 @@ accelerate
 evaluate
 seqeval
 gunicorn
+requests
