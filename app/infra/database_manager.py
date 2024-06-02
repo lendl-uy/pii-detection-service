@@ -81,6 +81,19 @@ class DatabaseManager:
 
             return query.all()
 
+    def delete_entries(self, table, filter_dict=None):
+        with self.Session() as session:
+            entries = session.query(table)
+            if filter_dict:
+                for key, value in filter_dict.items():
+                    entries = entries.filter(getattr(table, key) == value)
+                if entries.count() == 0:
+                    raise ValueError("No entries found matching the filter criteria.")
+
+            _ = entries.delete(
+                synchronize_session='fetch')  # Deletes the records and synchronizes the session
+            session.commit()
+
     def clear_table(self, table):
         with self.Session() as session:
             session.query(table).delete()
