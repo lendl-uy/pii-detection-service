@@ -21,6 +21,7 @@ class ModelEntry(Base):
     prediction_id = Column(Integer, primary_key=True)
     doc_id = Column(Integer)
     model_name = Column(String)
+    f5_score = Column(Float)
     runtime = Column(Float)
     predicted_at = Column(DateTime, default=func.now()) # Automatically sets to current timestamp on creation
 
