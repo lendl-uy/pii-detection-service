@@ -10,14 +10,6 @@ ENV PYTHONPATH=/usr/src/app
 # Print the current directory and its ls and show when I run docker compose
 RUN ls -la
 
-# Install Nginx
-RUN apt-get update && \
-    apt-get install -y nginx && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy the Nginx configuration file into the container
-COPY nginx.conf /etc/nginx/nginx.conf
-
 # Install dependencies
 COPY deploy/ml-requirements.txt ./
 RUN pip install -r ml-requirements.txt
@@ -25,9 +17,8 @@ RUN pip install -r ml-requirements.txt
 
 EXPOSE 5001
 
-# Run Nginx and the application using a multi-command tool such as supervisord
-COPY supervisord.conf /etc/supervisord.conf
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+# Run gunicorn
+CMD ["gunicorn", "app.services.ml_service.ml_service_app:app", "--bind", "0.0.0.0:5001", "--timeout", "60", "--workers", "4"]
 
 # Print the current directory and its ls and show when I run docker compose
-CMD ["python", "app/services/ml_service/ml_service_app.py"]
+# CMD ["python", "app/services/ml_service/ml_service_app.py"]
