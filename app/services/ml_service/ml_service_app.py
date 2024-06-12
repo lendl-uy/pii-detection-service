@@ -91,7 +91,7 @@ def predict():
 
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{BACKEND_SERVICE_HOST}:8000/retrieve-predictions", json=predictor_response, headers=headers)
+        response = requests.post(f"http://{BACKEND_SERVICE_HOST}:8080/retrieve-predictions", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
