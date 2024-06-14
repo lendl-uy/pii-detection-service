@@ -68,3 +68,5 @@ Action Items:
 
 ## CICD Components
 * Pylint
+* Deploy to Backend ECS
+* Deploy to ML ECS
