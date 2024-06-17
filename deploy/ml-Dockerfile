@@ -13,7 +13,6 @@ RUN ls -la
 # Install dependencies
 COPY deploy/ml-requirements.txt ./
 RUN pip install -r ml-requirements.txt
-# RUN pip install --no-cache-dir -r backend-requirements.txt
 
 EXPOSE 5001
 
