@@ -51,14 +51,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build
+  build_job:
     runs-on: ubuntu-latest
     environment: production
-    outputs:
-      backend_image: ${{ steps.build-image-backend.outputs.backend_image }}
-      nginx_image: ${{ steps.build-image-nginx.outputs.nginx_image }}
-      ml_image: ${{ steps.build-image-ml.outputs.ml_image }}
 
     steps:
     - name: Checkout
@@ -83,7 +78,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -f deploy/backend-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-        echo "backend_image=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "BACKEND_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_ENV
     
     - name: Build, tag, and push image to Amazon ECR (NGINX)
       id: build-image-nginx
@@ -93,7 +88,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f deploy/nginx-Dockerfile ./deploy
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-        echo "nginx_image=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "NGINX_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG" >> $GITHUB_ENV
     
     - name: Build, tag, and push image to Amazon ECR (ML)
       id: build-image-ml
@@ -103,13 +98,12 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG -f deploy/ml-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG
-        echo "ml_image=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "ML_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_ENV
           
-  deploy:
-    name: Deploy
+  deploy_job:
     runs-on: ubuntu-latest
     environment: production
-    needs: build
+    needs: build_job
 
     steps:
     - name: Checkout
@@ -125,10 +119,12 @@ jobs:
     - name: Render Amazon ECS task definition (BACKEND)
       id: render-backend-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
+      env:
+        IMAGE_TAG: ${{ needs.build.outputs.backend_image }}
       with:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
         container-name: ${{ env.CONTAINER_NAME_BACKEND }}
-        image: ${{ needs.build.outputs.backend_image }}
+        image: ${{ env.BACKEND_IMAGE }}
     
     - name: Render Amazon ECS task definition (NGINX)
       id: render-nginx-container
@@ -136,7 +132,7 @@ jobs:
       with:
         task-definition: ${{ steps.render-backend-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_NGINX }}
-        image: ${{ needs.build.outputs.nginx_image }}
+        image: ${{ env.NGINX_IMAGE }}
     
     - name: Render Amazon ECS task definition (ML)
       id: render-ml-container
@@ -144,7 +140,7 @@ jobs:
       with:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_ML }}
-        image: ${{ needs.build.outputs.ml_image }}
+        image: ${{ env.ML_IMAGE }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
