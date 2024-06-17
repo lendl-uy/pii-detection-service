@@ -43,7 +43,7 @@ class User(UserMixin, Base):
 
 class DatabaseManager:
     def __init__(self, db_host, db_user, db_pass, db_name):
-        db_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:5555/{db_name}"
+        db_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:5432/{db_name}"
         self.engine = create_engine(db_url)
         self.Session = sessionmaker(bind=self.engine)
         Base.metadata.create_all(self.engine)
