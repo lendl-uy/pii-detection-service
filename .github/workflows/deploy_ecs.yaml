@@ -54,6 +54,10 @@ jobs:
   build_job:
     runs-on: ubuntu-latest
     environment: production
+    outputs:
+      backend_image: ${{ steps.build-image-backend.outputs.backend_image }}
+      nginx_image: ${{ steps.build-image-nginx.outputs.nginx_image }}
+      ml_image: ${{ steps.build-image-ml.outputs.ml_image }}
 
     steps:
     - name: Checkout
@@ -76,9 +80,9 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -f deploy/backend-Dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-        echo "BACKEND_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_ENV
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest -f deploy/backend-Dockerfile .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
+        echo "backend_image=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest" >> "$GITHUB_OUTPUT"
     
     - name: Build, tag, and push image to Amazon ECR (NGINX)
       id: build-image-nginx
@@ -86,9 +90,9 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f deploy/nginx-Dockerfile ./deploy
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-        echo "NGINX_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG" >> $GITHUB_ENV
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:latest -f deploy/nginx-Dockerfile ./deploy
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:latest
+        echo "nginx_image=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:latest" >> "$GITHUB_OUTPUT"
     
     - name: Build, tag, and push image to Amazon ECR (ML)
       id: build-image-ml
@@ -96,9 +100,9 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG -f deploy/ml-Dockerfile .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG
-        echo "ML_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_ENV
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:latest -f deploy/ml-Dockerfile .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:latest
+        echo "ml_image=$ECR_REGISTRY/$ECR_REPOSITORY_ML:latest" >> "$GITHUB_OUTPUT"
           
   deploy_job:
     runs-on: ubuntu-latest
@@ -116,31 +120,39 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CICD }}
         aws-region: ${{ env.AWS_REGION }}
     
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
     - name: Render Amazon ECS task definition (BACKEND)
       id: render-backend-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       env:
-        IMAGE_TAG: ${{ needs.build.outputs.backend_image }}
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       with:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
         container-name: ${{ env.CONTAINER_NAME_BACKEND }}
-        image: ${{ env.BACKEND_IMAGE }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_BACKEND }}:latest
     
     - name: Render Amazon ECS task definition (NGINX)
       id: render-nginx-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       with:
         task-definition: ${{ steps.render-backend-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_NGINX }}
-        image: ${{ env.NGINX_IMAGE }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_NGINX }}:latest
     
     - name: Render Amazon ECS task definition (ML)
       id: render-ml-container
       uses: aws-actions/amazon-ecs-render-task-definition@v1
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       with:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_ML }}
-        image: ${{ env.ML_IMAGE }}
+        image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_ML }}:latest
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
