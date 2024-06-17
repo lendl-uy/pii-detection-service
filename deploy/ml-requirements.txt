@@ -13,3 +13,4 @@ torchvision --find-links https://download.pytorch.org/whl/cpu
 torchaudio --find-links https://download.pytorch.org/whl/cpu
 transformers
 gunicorn
+Flask-Login
