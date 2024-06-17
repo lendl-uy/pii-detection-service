@@ -1,6 +1,9 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ARRAY, DateTime, Float, desc
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.sql import func
+from  flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 # Updated import path for declarative_base
 Base = declarative_base()
@@ -25,9 +28,22 @@ class ModelEntry(Base):
     runtime = Column(Float)
     predicted_at = Column(DateTime, default=func.now()) # Automatically sets to current timestamp on creation
 
+
+class User(UserMixin, Base):
+    __tablename__ = "user"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 class DatabaseManager:
     def __init__(self, db_host, db_user, db_pass, db_name):
-        db_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}/{db_name}"
+        db_url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:5555/{db_name}"
         self.engine = create_engine(db_url)
         self.Session = sessionmaker(bind=self.engine)
         Base.metadata.create_all(self.engine)
