@@ -18,3 +18,5 @@ datasets
 accelerate
 evaluate
 seqeval
+gunicorn
+requests

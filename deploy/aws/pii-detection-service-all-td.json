@@ -1,0 +1,198 @@
+{
+    "taskDefinitionArn": "arn:aws:ecs:ap-southeast-1:560762403195:task-definition/pii-detection-service-all-td:8",
+    "containerDefinitions": [
+        {
+            "name": "nginx",
+            "image": "560762403195.dkr.ecr.ap-southeast-1.amazonaws.com/pii-detection-service-nginx:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "name": "nginx-8080",
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                },
+                {
+                    "name": "nginx-8081",
+                    "containerPort": 8081,
+                    "hostPort": 8081,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [
+                {
+                    "value": "arn:aws:s3:::ai212-pii/.env",
+                    "type": "s3"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "dependsOn": [
+                {
+                    "containerName": "backend",
+                    "condition": "START"
+                },
+                {
+                    "containerName": "ml",
+                    "condition": "START"
+                }
+            ],
+            "ulimits": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/pii-detection-service-all-td",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            },
+            "systemControls": []
+        },
+        {
+            "name": "backend",
+            "image": "560762403195.dkr.ecr.ap-southeast-1.amazonaws.com/pii-detection-service-backend:latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "name": "backend-5002",
+                    "containerPort": 5002,
+                    "hostPort": 5002,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [
+                {
+                    "value": "arn:aws:s3:::ai212-pii/.env",
+                    "type": "s3"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/pii-detection-service-all-td",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            },
+            "systemControls": []
+        },
+        {
+            "name": "ml",
+            "image": "560762403195.dkr.ecr.ap-southeast-1.amazonaws.com/pii-detection-service-ml:latest",
+            "cpu": 1024,
+            "memory": 6144,
+            "memoryReservation": 4096,
+            "portMappings": [
+                {
+                    "name": "ml-5001",
+                    "containerPort": 5001,
+                    "hostPort": 5001,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [
+                {
+                    "value": "arn:aws:s3:::ai212-pii/.env",
+                    "type": "s3"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/pii-detection-service-all-td",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "ap-southeast-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            },
+            "systemControls": []
+        }
+    ],
+    "family": "pii-detection-service-all-td",
+    "taskRoleArn": "arn:aws:iam::560762403195:role/ecs-pii-detection-service-task-role",
+    "executionRoleArn": "arn:aws:iam::560762403195:role/ecs-pii-detection-service-task-role",
+    "networkMode": "awsvpc",
+    "revision": 8,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "ecs.capability.env-files.s3"
+        },
+        {
+            "name": "ecs.capability.container-ordering"
+        },
+        {
+            "name": "ecs.capability.extensible-ephemeral-storage"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "FARGATE"
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "2048",
+    "memory": "8192",
+    "ephemeralStorage": {
+        "sizeInGiB": 100
+    },
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "registeredAt": "2024-06-17T05:01:12.796Z",
+    "registeredBy": "arn:aws:iam::560762403195:user/cbbalanquit",
+    "tags": []
+}

@@ -1,5 +1,5 @@
+numpy==1.26.4
 spacy
-tqdm
 psycopg2-binary
 boto3
 scikit-learn
@@ -8,5 +8,8 @@ moto
 sqlalchemy
 Flask
 python-dotenv
-torch
+torch --find-links https://download.pytorch.org/whl/cpu
+torchvision --find-links https://download.pytorch.org/whl/cpu
+torchaudio --find-links https://download.pytorch.org/whl/cpu
 transformers
+gunicorn

@@ -18,8 +18,6 @@ def db_manager():
     """Fixture to connect to the database before tests and disconnect afterwards."""
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
-    # Teardown: Clear the database
-    manager.clear_table(DocumentEntry)
 
 def test_insert(db_manager):
     """Test the insert method."""
@@ -33,6 +31,7 @@ def test_insert(db_manager):
     assert result[0].labels == ["B-NAME"]
     assert result[0].validated_labels == ["B-NAME"]
     assert result[0].for_retrain is True
+    db_manager.delete_entries(DocumentEntry, {"full_text": entry.full_text})
     session.close()
 
 def test_update(db_manager):
@@ -49,6 +48,7 @@ def test_update(db_manager):
         assert entry.full_text == "Hello Updated"
 
     finally:
+        db_manager.delete_entries(DocumentEntry, {"full_text": entry.full_text})
         session.close()
 
 def test_query(db_manager):
@@ -59,6 +59,19 @@ def test_query(db_manager):
     filter_criteria = {"full_text": "Query Test"}
     result = db_manager.query_entries(DocumentEntry, filter_criteria, 1)
     assert result[0].full_text == "Query Test"
+
+    db_manager.delete_entries(DocumentEntry, {"full_text": entry.full_text})
+    session.close()
+
+def test_delete(db_manager):
+    """Test the query method."""
+    entry = DocumentEntry(full_text="Query Test", tokens=["Test"], labels=["Query"], validated_labels=["Query"], for_retrain=False)
+    session = db_manager.Session()
+    db_manager.add_entry(entry)
+    filter_criteria = {"full_text": "Query Test"}
+    _ = db_manager.delete_entries(DocumentEntry, filter_criteria)
+    query = db_manager.query_entries(DocumentEntry, filter_criteria)
+    assert len(query) == 0
     session.close()
 
 def test_clear(db_manager):

@@ -5,8 +5,13 @@ services:
       context: .
       dockerfile: deploy/backend-Dockerfile
     ports:
-      - "5000:5000"
+      - "5002:5002"
+    depends_on:
+      - ml
     env_file: .env
+    networks:
+      - app-network
+
   ml:
     build:
       context: .
@@ -14,3 +19,22 @@ services:
     ports:
       - "5001:5001"
     env_file: .env
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./deploy  # Assuming the Dockerfile for Nginx is in the root directory
+      dockerfile: nginx-Dockerfile  # Path to your Nginx Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - backend
+      - ml
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

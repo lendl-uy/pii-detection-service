@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from app.services.ml_service.constants import DEBERTA_NER, sample_text, sample_tokens
 from app.services.ml_service.predictor import Predictor
 from app.infra.object_store_manager import ObjectStoreManager
-from app.infra.database_manager import DatabaseManager, DocumentEntry
+from app.infra.database_manager import DatabaseManager, DocumentEntry, ModelEntry
 
 # For local testing only
 # Load environment variables from .env file
@@ -27,7 +27,8 @@ def model():
 
     yield db_manager, predictor
 
-    predictor.delete_model(DEBERTA_NER)
+    # predictor.delete_model(DEBERTA_NER)
+    db_manager.clear_table(ModelEntry)
     db_manager.clear_table(DocumentEntry)
 
 def test_predict_sample_document_from_test_set(model):
@@ -43,7 +44,9 @@ def test_predict_sample_document_from_test_set(model):
     assert text is not None, "No document retrieved."
 
     # Make predictions
+    print(f"Predicting!")
     predictor.predict_deberta(text, DEBERTA_NER)
+    print(f"Done predicting!")
     predictor.save_predictions_to_database(db_manager)
 
     # Check if predictions are saved and match

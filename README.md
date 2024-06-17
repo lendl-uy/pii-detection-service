@@ -70,3 +70,14 @@ Action Items:
 * Pylint
 * Deploy to Backend ECS
 * Deploy to ML ECS
+* 
+
+## D. Deployment
+### Push to ECR
+```
+docker build -t pii-detection-service-ml . -f deploy/ml-Dockerfile
+
+docker build -t pii-detection-service-backend . -f deploy/backend-Dockerfile
+
+docker build -t pii-detection-service-nginx ./deploy -f deploy/nginx-Dockerfile
+```

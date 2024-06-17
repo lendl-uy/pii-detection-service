@@ -7,6 +7,7 @@ class ObjectStoreManager:
         self.s3_client = boto3.client("s3")
 
     def download(self, object_name, file_name):
+        print(f"object_name = {object_name} | file_name = {file_name}")
         try:
             self.s3_client.download_file(self.name, object_name, file_name)
             print("File downloaded successfully")

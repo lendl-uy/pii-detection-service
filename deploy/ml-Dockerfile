@@ -16,5 +16,8 @@ RUN pip install -r ml-requirements.txt
 
 EXPOSE 5001
 
+# Run gunicorn
+CMD ["gunicorn", "app.services.ml_service.ml_service_app:app", "--bind", "0.0.0.0:5001", "--timeout", "60", "--workers", "4"]
+
 # Print the current directory and its ls and show when I run docker compose
-CMD ["python", "app/services/ml_service/ml_service_app.py"]
+# CMD ["python", "app/services/ml_service/ml_service_app.py"]

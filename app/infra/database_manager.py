@@ -21,6 +21,7 @@ class ModelEntry(Base):
     prediction_id = Column(Integer, primary_key=True)
     doc_id = Column(Integer)
     model_name = Column(String)
+    f5_score = Column(Float)
     runtime = Column(Float)
     predicted_at = Column(DateTime, default=func.now()) # Automatically sets to current timestamp on creation
 
@@ -80,6 +81,19 @@ class DatabaseManager:
                 query = query.limit(limit)
 
             return query.all()
+
+    def delete_entries(self, table, filter_dict=None):
+        with self.Session() as session:
+            entries = session.query(table)
+            if filter_dict:
+                for key, value in filter_dict.items():
+                    entries = entries.filter(getattr(table, key) == value)
+                if entries.count() == 0:
+                    raise ValueError("No entries found matching the filter criteria.")
+
+            _ = entries.delete(
+                synchronize_session='fetch')  # Deletes the records and synchronizes the session
+            session.commit()
 
     def clear_table(self, table):
         with self.Session() as session:

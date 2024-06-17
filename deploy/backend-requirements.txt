@@ -3,3 +3,4 @@ requests
 sqlalchemy
 Flask
 python-dotenv
+gunicorn

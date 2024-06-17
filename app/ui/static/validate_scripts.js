@@ -30,6 +30,7 @@ function renderTokens() {
 
     data.tokens.forEach((token, index) => {
         // Check if token starts with "▁" for new word indication
+        // console.log("token: " + token);
         if (token.startsWith("▁")) {
             if (!isFirstToken) {
                 // Add a space before tokens that start a new word but are not the first token
@@ -41,7 +42,7 @@ function renderTokens() {
         } else {
             // For tokens that do not start with "▁" and are not the first token, add a space
             if (!isFirstToken) {
-                container.appendChild(document.createTextNode(' '));
+                container.appendChild(document.createTextNode(''));
             }
         }
 
@@ -68,6 +69,7 @@ function renderTokens() {
         container.appendChild(span);
     });
 }
+
 
 function cssClassNameFromLabel(index) {
     return data.labels[index] !== 'O' ? 'highlight' : '';
@@ -132,7 +134,8 @@ function updateDropdownHighlight(dropdown, activeButton, index) {
 function setLabel(index, label) {
     console.log(`Token ${index} labeled as: ${label}`);
     data.labels[index] = label;
-    labelChanges.push({ docId: data.doc_id, tokenIndex: index, newLabel: label });
+    console.log('Token ' + data.tokens[index])
+    labelChanges.push({ docId: data.doc_id, tokenIndex: index, tokens: data.tokens, newLabel: label });
     renderTokens();
 }
 
