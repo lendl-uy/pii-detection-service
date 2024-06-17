@@ -70,7 +70,6 @@ Action Items:
 * Pylint
 * Deploy to Backend ECS
 * Deploy to ML ECS
-* 
 
 ## D. Deployment
 ### Push to ECR
