@@ -79,7 +79,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -f deploy/backend-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-        echo "backend_image=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "::set-output name=backend_image::$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG"
     
     - name: Build, tag, and push image to Amazon ECR (NGINX)
       id: build-image-nginx
@@ -89,7 +89,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f deploy/nginx-Dockerfile ./deploy
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-        echo "nginx_image=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "::set-output name=nginx_image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG"
     
     - name: Build, tag, and push image to Amazon ECR (ML)
       id: build-image-ml
@@ -99,7 +99,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG -f deploy/ml-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG
-        echo "ml_image=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "::set-output name=ml_image::$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG"
           
   deploy:
     name: Deploy
@@ -124,7 +124,7 @@ jobs:
       with:
         task-definition: ${{ env.ECS_TASK_DEFINITION }}
         container-name: ${{ env.CONTAINER_NAME_BACKEND }}
-        image: ${{ env.backend_image }}
+        image: ${{ needs.build.outputs.backend_image }}
     
     - name: Render Amazon ECS task definition (NGINX)
       id: render-nginx-container
@@ -132,7 +132,7 @@ jobs:
       with:
         task-definition: ${{ steps.render-backend-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_NGINX }}
-        image: ${{ env.nginx_image }}
+        image: ${{ needs.build.outputs.nginx_image }}
     
     - name: Render Amazon ECS task definition (ML)
       id: render-ml-container
@@ -140,7 +140,7 @@ jobs:
       with:
         task-definition: ${{ steps.render-nginx-container.outputs.task-definition }}
         container-name: ${{ env.CONTAINER_NAME_ML }}
-        image: ${{ env.ml_image }}
+        image: ${{ needs.build.outputs.ml_image }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
