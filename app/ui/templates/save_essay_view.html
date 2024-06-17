@@ -9,7 +9,23 @@
 </head>
 
 <body>
+  <div class="header">
+    <div class="user-info">
+        Hi <span id="username">{{ username }}</span>! <a href="/logout">Logout</a>
+    </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="mt-4">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+  </div>
     <div class="text-center">
         <a href="/">
             <img src="{{url_for('static', filename='PII Finder.png')}}" alt="PII Finder" class="img-fluid img-fixed-below-threshold"/>
