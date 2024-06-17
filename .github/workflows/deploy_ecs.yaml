@@ -55,6 +55,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     environment: production
+    outputs:
+      backend_image: ${{ steps.build-image-backend.outputs.backend_image }}
+      nginx_image: ${{ steps.build-image-nginx.outputs.nginx_image }}
+      ml_image: ${{ steps.build-image-ml.outputs.ml_image }}
 
     steps:
     - name: Checkout
@@ -79,7 +83,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -f deploy/backend-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-        echo "::set-output name=backend_image::$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG"
+        echo "backend_image=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
     
     - name: Build, tag, and push image to Amazon ECR (NGINX)
       id: build-image-nginx
@@ -89,7 +93,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG -f deploy/nginx-Dockerfile ./deploy
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG
-        echo "::set-output name=nginx_image::$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG"
+        echo "nginx_image=$ECR_REGISTRY/$ECR_REPOSITORY_NGINX:$IMAGE_TAG" >> $GITHUB_OUTPUT
     
     - name: Build, tag, and push image to Amazon ECR (ML)
       id: build-image-ml
@@ -99,7 +103,7 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG -f deploy/ml-Dockerfile .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG
-        echo "::set-output name=ml_image::$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG"
+        echo "ml_image=$ECR_REGISTRY/$ECR_REPOSITORY_ML:$IMAGE_TAG" >> $GITHUB_OUTPUT
           
   deploy:
     name: Deploy
