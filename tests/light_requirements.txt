@@ -11,3 +11,4 @@ python-dotenv
 torch
 spacy
 transformers
+Flask-Login
