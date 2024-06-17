@@ -126,4 +126,5 @@ def evaluate_model_performance(doc_id):
         , 200)
 
 if __name__ == "__main__":
-    app.run(port=8001, debug=True)
+    # Listen on all interfaces and use port 5002
+    app.run(host='0.0.0.0', port=5001, debug=True)

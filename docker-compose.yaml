@@ -6,6 +6,8 @@ services:
       dockerfile: deploy/backend-Dockerfile
     ports:
       - "5002:5002"
+    depends_on:
+      - ml
     env_file: .env
     networks:
       - app-network
@@ -32,6 +34,7 @@ services:
       - ml
     networks:
       - app-network
+
 networks:
   app-network:
     driver: bridge

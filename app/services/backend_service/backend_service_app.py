@@ -61,7 +61,7 @@ def save_essay():
     if not essay:
         return jsonify({"message": "No essay data provided"}), 400
 
-    try:
+    try:    
         cleaned_essay = Preprocessor().decode_escapes(essay)
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
@@ -383,4 +383,5 @@ def determine_prefix(previous_label, new_label, preprocessor):
 
 
 if __name__ == '__main__':
-    app.run(port=8000, debug=True)
+    # Use port 5002. and listen on all interfaces.
+    app.run(host='0.0.0.0', port=5002, debug=True)
