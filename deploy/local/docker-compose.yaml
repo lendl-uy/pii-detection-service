@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: pii_detection_db_local
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: pii_detection_local
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

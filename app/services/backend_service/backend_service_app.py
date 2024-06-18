@@ -136,7 +136,7 @@ def save_essay():
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
 
-        response = requests.post(f"http://{ML_SERVICE_HOST}:8081/predict", json={"doc_id": doc_id})
+        response = requests.post(f"http://{ML_SERVICE_HOST}:5001/predict", json={"doc_id": doc_id})
         return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
     except psycopg2.Error as e:
         logger.error(f"Database error: {e}")
@@ -237,8 +237,6 @@ def format_document(doc):
     labels = preprocess_labels(doc)
     cleaned_tokens = doc.tokens[1:-1]
     cleaned_labels = labels[1:-1]
-    logger.info(f"cleaned_tokens = {cleaned_tokens}")
-    logger.info(f"cleaned_labels = {cleaned_labels}")
     merged_cleaned_tokens, merged_cleaned_labels = merge_tokens_and_labels(cleaned_tokens, cleaned_labels)
     return {
         'doc_id': doc.doc_id,
@@ -422,7 +420,8 @@ def update_labels_in_document(document, tokens, token_index, new_label):
     deberta_custom_tokens_dict = rebuild_fragmented_tokens(document.tokens[1:-1], tokens)
     token_count = len(deberta_custom_tokens_dict[token_index])
     first_deberta_token = deberta_custom_tokens_dict[token_index][0]
-    starting_index = document.tokens.index(first_deberta_token)
+    starting_index = document.tokens[token_index:].index(first_deberta_token)
+    starting_index += token_index
     for i in range(starting_index, starting_index + token_count):
         # logger.info(f"token_index = {i}")
         previous_label = labels[i - 1] if i > 0 else "O"
