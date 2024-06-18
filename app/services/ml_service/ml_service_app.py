@@ -65,9 +65,9 @@ def predict():
     # Perform predictions on the input full text
     logger.info("Predicting PIIs from the given full text")
     start_time = time.time()
-    # predictor.predict(full_text, SPACY_PRETRAINED_EN_NER) # Use SpaCy NER
     predictor.predict_deberta(full_text, DEBERTA_NER) # Use DeBERTa
-    logger.info(f"predictions = {predictor.predictions}")
+    predictor.clean_up_predictions()
+    logger.info(f"Predictions = {predictor.predictions}")
     logger.info("Done predicting PIIs")
     runtime = time.time() - start_time
 
@@ -91,7 +91,7 @@ def predict():
 
         # Send predictions to the backend service
         headers = {"Content-Type": "application/json"}
-        response = requests.post(f"http://{BACKEND_SERVICE_HOST}:8080/retrieve-predictions", json=predictor_response, headers=headers)
+        response = requests.post(f"http://{BACKEND_SERVICE_HOST}:5002/retrieve-predictions", json=predictor_response, headers=headers)
         if response.status_code == 200:
             return {"status": "SUCCESS", "document_id": updated_entry.doc_id, "runtime": f"{runtime:.2f} s"}, 200
         else:
@@ -126,4 +126,4 @@ def evaluate_model_performance(doc_id):
         , 200)
 
 if __name__ == "__main__":
-    app.run(port=8001, debug=True)
+    app.run(port=8081, debug=True)
