@@ -23,7 +23,7 @@ SAMPLE_ESSAY_WITH_LABELS = "sample_input_with_labels.json"
 def db_manager():
     manager = DatabaseManager(DB_HOST, DB_USER, DB_PASS, DB_NAME)
     yield manager
-    manager.clear_table(DocumentEntry)
+    # manager.clear_table(DocumentEntry)
 
 def test_ingest_full_text_and_tokens_to_database(db_manager):
 
