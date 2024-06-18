@@ -4,3 +4,4 @@ sqlalchemy
 Flask
 python-dotenv
 gunicorn
+Flask-Login

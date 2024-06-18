@@ -3,12 +3,14 @@ import logging
 import requests
 
 import psycopg2
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from dotenv import load_dotenv
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+
 
 from app.services.backend_service.preprocessor import Preprocessor
 from app.services.backend_service.validation_preprocessor import ValidationPreprocessor
-from app.infra.database_manager import DatabaseManager, DocumentEntry
+from app.infra.database_manager import DatabaseManager, DocumentEntry, User
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,24 +31,92 @@ template_dir = os.path.abspath("app/ui/templates")
 static_dir = os.path.abspath("app/ui/static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
+
 # Logger setup
+app.secret_key = os.getenv("APP_SECRET_KEY")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Database manager initialization
 db_manager = DatabaseManager(**DB_CONFIG)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    session = db_manager.Session()
+    user = session.query(User).get(int(user_id))
+    session.close()
+    return user
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        session = db_manager.Session()
+        
+        user = User(username=username)
+        user.set_password(password)
+        session.add(user)
+        session.commit()
+        session.close()
+        flash('User registered successfully.')
+        return redirect(url_for('login'))
+    return render_template('register.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+
+        session = db_manager.Session()
+        user = session.query(User).filter_by(username=username).first()
+        
+        session.close()
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Logged in successfully.')
+            return redirect(url_for('save_essay_view'))
+        else:
+            flash('Invalid username or password.')
+    return render_template('login.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.')
+    return redirect(url_for('index'))
+
+
 @app.route("/")
 def index():
     return render_template("home.html")
 
 @app.route("/save-essay-view")
+@login_required
 def save_essay_view():
-    return render_template("save_essay_view.html")
+    #get user
+    user = current_user
+
+    flash('Some notification about poorly performing model.')
+    return render_template("save_essay_view.html",username=user.username)
 
 @app.route("/predictions-view")
+@login_required
 def predictions_view():
-    return render_template("predictions_view.html")
+    #get user
+    user = current_user
+    return render_template("predictions_view.html",username=user.username)
 
 # Endpoint to render the validation page
 @app.route("/validate/<int:doc_id>")
@@ -61,7 +131,7 @@ def save_essay():
     if not essay:
         return jsonify({"message": "No essay data provided"}), 400
 
-    try:
+    try:    
         cleaned_essay = Preprocessor().decode_escapes(essay)
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
@@ -382,4 +452,5 @@ def determine_prefix(previous_label, new_label, preprocessor):
 
 
 if __name__ == '__main__':
-    app.run(port=8080, debug=True)
+    # Use port 5002. and listen on all interfaces.
+    app.run(host='0.0.0.0', port=5002, debug=True)

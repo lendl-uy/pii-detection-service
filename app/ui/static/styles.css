@@ -83,4 +83,34 @@
 .active-label {
     color: black;
     font-weight: bold;
+
+}
+.header {
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.header .title {
+    font-size: 24px;
+    font-weight: bold;
+}
+.header .user-info {
+    font-size: 18px;
+}
+.header .user-info a {
+    text-decoration: none;
+    color: #007bff;
+    margin-left: 10px;
+}
+.header .user-info a:hover {
+    text-decoration: underline;
+}
+
+.alert{
+    padding: 0 !important;
+    margin: 0 !important;
 }
