@@ -1,6 +1,5 @@
 import os
 import zipfile
-import spacy
 import shutil
 import torch
 import json
@@ -27,7 +26,7 @@ class Predictor:
             print(f"All files have been extracted to: {extract_to}")
 
     def get_model(self, object_store):
-        model_path = f"{self.model_name}.zip"
+        model_path = f"../../../{self.model_name}"
         if not os.path.exists(self.model_name):
             print("Model not found! Downloading from AWS S3")
             object_store.download(f"{MODELS_DIRECTORY}/{self.model_name}.zip", model_path)
@@ -45,17 +44,17 @@ class Predictor:
         else:
             print(f"The specified model {model_path} does not exist.")
 
-    def predict(self, document, model_name):
-        nlp = spacy.load(model_name)
-        self.document = document
-        doc = nlp(document)
-        self.predictions = [(token.ent_type_ if token.ent_type_.startswith(('B-', 'I-')) else "O") for token in doc]
-
-        tokens = []
-
-        for token, label in zip(doc, self.predictions):
-            tokens.append(str(token))
-        self.tokens = tokens
+    # def predict(self, document, model_name):
+    #     nlp = spacy.load(model_name)
+    #     self.document = document
+    #     doc = nlp(document)
+    #     self.predictions = [(token.ent_type_ if token.ent_type_.startswith(('B-', 'I-')) else "O") for token in doc]
+    #
+    #     tokens = []
+    #
+    #     for token, label in zip(doc, self.predictions):
+    #         tokens.append(str(token))
+    #     self.tokens = tokens
 
     def tokenize_deberta(self, document, model_name):
         self.document = document
@@ -91,6 +90,71 @@ class Predictor:
         self.predictions = [id2label[str(pred.item())] for pred in filtered_predictions]
 
         return self.predictions
+
+    def merge_tokens_and_labels(self, tokens, labels):
+        merged_tokens = []
+        merged_labels = []
+
+        current_token = ""
+        current_label = ""
+        token_sequence_start = True
+
+        padded_tokens = tokens + ["▁"]
+        padded_labels = labels + ["O"]
+
+        for i in range(len(tokens)):
+            token = padded_tokens[i]
+            label = padded_labels[i]
+            next_token = padded_tokens[i + 1]
+            if not next_token.startswith("▁"):
+                if token_sequence_start:
+                    current_label = label
+                    current_token += token + next_token
+                    token_sequence_start = False
+                else:
+                    current_token += next_token
+            else:
+                if current_token:
+                    merged_tokens.append(current_token)
+                    merged_labels.append(current_label)
+                    current_token = ""
+                    token_sequence_start = True
+                else:
+                    merged_tokens.append(token)
+                    merged_labels.append(label)
+        return merged_tokens, merged_labels
+
+    def update_labels(self, merged_tokens):
+        merged_token = ""
+        token_start = True
+        first_label = ""
+        i = 0
+        j = 0
+        start = 0
+        for token, label in zip(self.tokens, self.predictions):
+            if token_start:
+                first_label = label
+                token_start = False
+                start = j
+                if len(token) == 1 and not token.isalnum():
+                    continue
+            merged_token += token
+            j += 1
+            if merged_token == merged_tokens[i]:
+                i += 1
+                token_start = True
+                if first_label != "O":
+                    end = j
+                    if (end - start) > 1:
+                        if not self.tokens[end].isalnum():
+                             end -= 1
+                        for m in range(start + 1, end):
+                            self.predictions[m] = "I" + first_label[1:]
+                merged_token = ""
+
+    def clean_up_predictions(self):
+        merged_tokens, _ = self.merge_tokens_and_labels(self.tokens, self.predictions)
+        self.update_labels(merged_tokens)
 
     def save_predictions_to_database(self, db_manager):
         entry = db_manager.query_entries(DocumentEntry, {"full_text": self.document}, limit=1)[0]
