@@ -102,6 +102,12 @@ def logout():
 def index():
     return render_template("home.html")
 
+@app.route("/about")
+@login_required
+def about():
+    user = current_user
+    return render_template("about.html", username=user.username)
+
 @app.route("/save-essay-view")
 @login_required
 def save_essay_view():
@@ -111,9 +117,6 @@ def save_essay_view():
     flash('Some notification about poorly performing model.')
     return render_template("save_essay_view.html",username=user.username)
 
-@app.route('/about')
-def about():
-    return render_template('about.html', username=user.username)
 
 @app.route("/predictions-view")
 @login_required
