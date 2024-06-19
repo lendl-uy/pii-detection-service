@@ -11,7 +11,7 @@
 <body>
     <div class="header">
         <div class="user-info">
-            Hi <span id="username">{{ username }}</span>! <a href="/logout">Logout</a>
+            Hi, <span id="username">{{ username }}</span>! <a href="/logout">Logout</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -34,13 +34,13 @@
 
     <ul class="nav nav-underline justify-content-center">
         <li class="nav-item">
-            <a class="nav-link" href="/">Search for PIIs</a>
+            <a class="nav-link active">About</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/save-essay-view">Search for PIIs</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="/predictions-view">View all predictions</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="/about">About</a>
         </li>
     </ul>
 
@@ -74,7 +74,6 @@
     <footer class="text-center mt-5">
         <p>&copy; 2024 PII Finder. All rights reserved.</p>
     </footer>
-
 
 </body>
 </html>

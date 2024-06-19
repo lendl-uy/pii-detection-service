@@ -15,15 +15,15 @@
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="mt-4">
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+        {% if messages %}
+            <div class="mt-4">
+                {% for category, message in messages -%}
+    <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+    </div>
+                {%- endfor %}
+            </div>
+        {% endif %}
     {% endwith %}
   </div>
     <div class="text-center">
