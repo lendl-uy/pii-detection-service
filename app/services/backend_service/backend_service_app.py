@@ -111,6 +111,10 @@ def save_essay_view():
     flash('Some notification about poorly performing model.')
     return render_template("save_essay_view.html",username=user.username)
 
+@app.route('/about')
+def about():
+    return render_template('about.html', username=user.username)
+
 @app.route("/predictions-view")
 @login_required
 def predictions_view():
