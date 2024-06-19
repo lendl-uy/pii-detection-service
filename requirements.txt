@@ -20,3 +20,4 @@ evaluate
 seqeval
 gunicorn
 requests
+Flask-Login
