@@ -1,13 +1,11 @@
 import os
 import logging
 import requests
-
 import psycopg2
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from dotenv import load_dotenv
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-
-
+from sqlalchemy.exc import IntegrityError
 from app.services.backend_service.preprocessor import Preprocessor
 from app.services.backend_service.validation_preprocessor import ValidationPreprocessor
 from app.infra.database_manager import DatabaseManager, DocumentEntry, User
@@ -27,8 +25,8 @@ DB_CONFIG = {
 ML_SERVICE_HOST = os.getenv("ML_SERVICE_HOST")
 
 # Flask app setup
-template_dir = os.path.abspath("app/ui/templates")
-static_dir = os.path.abspath("app/ui/static")
+template_dir = os.path.abspath("../../ui/templates")
+static_dir = os.path.abspath("../../ui/static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 
@@ -54,21 +52,28 @@ def load_user(user_id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    errors = {}
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
         session = db_manager.Session()
-        
-        user = User(username=username)
-        user.set_password(password)
-        session.add(user)
-        session.commit()
-        session.close()
-        flash('User registered successfully.')
-        return redirect(url_for('login'))
-    return render_template('register.html')
 
+        try:
+            # Create a new user
+            new_user = User(username=username)
+            new_user.set_password(password)
+            session.add(new_user)
+            session.commit()
+
+            flash('Registration successful. Please log in.', 'success')
+            return redirect(url_for('login'))
+
+        except IntegrityError:
+            session.rollback()
+            errors['username'] = 'Username already exists. Please choose a different username.'
+
+    return render_template('register.html', errors=errors)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -114,14 +119,14 @@ def save_essay_view():
     #get user
     user = current_user
 
-    flash('Some notification about poorly performing model.')
+    # flash('Some notification about poorly performing model.')
     return render_template("save_essay_view.html",username=user.username)
 
 
 @app.route("/predictions-view")
 @login_required
 def predictions_view():
-    #get user
+    # get user
     user = current_user
     return render_template("predictions_view.html",username=user.username)
 
