@@ -25,8 +25,8 @@ DB_CONFIG = {
 ML_SERVICE_HOST = os.getenv("ML_SERVICE_HOST")
 
 # Flask app setup
-template_dir = os.path.abspath("../../ui/templates")
-static_dir = os.path.abspath("../../ui/static")
+template_dir = os.path.abspath("app/ui/templates")
+static_dir = os.path.abspath("app/ui/static")
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 
