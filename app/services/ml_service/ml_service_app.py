@@ -55,8 +55,10 @@ def predict():
     # Instantiate the predictor
     logger.info("Pulling the latest model")
     # predictor = Predictor(SPACY_PRETRAINED_EN_NER)
+    start_time = time.time()
     predictor = Predictor(DEBERTA_NER)
     predictor.get_model(s3_manager)
+    logger.info(f"Model pulled in {time.time() - start_time:.2f} s")
 
     if not full_text:
         logger.info("No document found for prediction.")
