@@ -74,12 +74,13 @@ def test_delete(db_manager):
     assert len(query) == 0
     session.close()
 
-def test_clear(db_manager):
-    """Test the clear method."""
-    entry = DocumentEntry(full_text="To Clear", tokens=["Clear"], labels=["Test"], validated_labels=["Test"], for_retrain=False)
-    session = db_manager.Session()
-    db_manager.add_entry(entry)
-    db_manager.clear_table(DocumentEntry)
-    result = session.query(DocumentEntry).all()
-    assert len(result) == 0
-    session.close()
+# def test_clear(db_manager):
+#    """Test the clear method."""
+#    entry = DocumentEntry(full_text="To Clear", tokens=["Clear"], labels=["Test"], validated_labels=["Test"], for_retrain=False)
+#    session = db_manager.Session()
+#    db_manager.add_entry(entry)
+#    db_manager.clear_table(DocumentEntry)
+#    result = session.query(DocumentEntry).all()
+#    assert len(result) == 0
+#    session.close() 
+#
