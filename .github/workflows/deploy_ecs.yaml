@@ -47,6 +47,9 @@ env:
   CONTAINER_NAME_BACKEND: backend
   CONTAINER_NAME_NGINX: nginx
 
+  BACKEND_SERVICE_HOST: ${{ secrets.BACKEND_SERVICE_HOST }}
+  ML_SERVICE_HOST: ${{ secrets.ML_SERVICE_HOST }}
+
 permissions:
   contents: read
 

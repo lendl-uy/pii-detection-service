@@ -148,7 +148,7 @@ def save_essay():
         document_entry = DocumentEntry(full_text=cleaned_essay)
         doc_id = db_manager.add_entry(document_entry)
 
-        response = requests.post(f"http://{ML_SERVICE_HOST}:5001/predict", json={"doc_id": doc_id})
+        response = requests.post(f"http://{ML_SERVICE_HOST}:8081/predict", json={"doc_id": doc_id})
         return jsonify({"message": "Essay saved and prediction requested successfully"}), 200
     except psycopg2.Error as e:
         logger.error(f"Database error: {e}")
